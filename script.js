@@ -66,7 +66,7 @@ if (signupForm && signupMessage) {
     signupMessage.classList.add("success");
 
     try {
-      const { data: authData, error: authError } = await supabase.auth.signUp({
+      const { data: authData, error: authError } = await window.supabaseClient.auth.signUp({
         email,
         password,
         options: {
@@ -77,7 +77,7 @@ if (signupForm && signupMessage) {
       if (authError) throw authError;
 
       if (authData.user) {
-        const { error: profileError } = await supabase.from("profiles").insert({
+        const { error: profileError } = await window.supabaseClient.from("profiles").insert({
           id: authData.user.id,
           display_name: displayName,
           email,
@@ -224,7 +224,7 @@ if (verifyBtn && verifyMessage) {
     verifyMessage.textContent = "Verifying...";
 
     try {
-      const { data, error } = await supabase
+      const { data, error } = await window.supabaseClient
         .from("profiles")
         .select("confirmation_code")
         .eq("email", pendingVerifyEmail)
@@ -233,7 +233,7 @@ if (verifyBtn && verifyMessage) {
       if (error) throw error;
 
       if (data.confirmation_code === code) {
-        const { error: updateError } = await supabase
+        const { error: updateError } = await window.supabaseClient
           .from("profiles")
           .update({ is_confirmed: true, confirmation_code: null })
           .eq("email", pendingVerifyEmail);
@@ -343,15 +343,15 @@ if (loginForm && loginMessage) {
     loginMessage.textContent = "Logging in...";
 
     try {
-      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({ email, password });
+      const { data: authData, error: authError } = await window.supabaseClient.auth.signInWithPassword({ email, password });
       if (authError) throw authError;
 
-      const { data: profile } = await supabase.from("profiles").select("display_name, account_type, is_confirmed").eq("id", authData.user.id).single();
+      const { data: profile } = await window.supabaseClient.from("profiles").select("display_name, account_type, is_confirmed").eq("id", authData.user.id).single();
 
       if (profile && !profile.is_confirmed && profile.account_type !== "admin") {
         loginMessage.className = "form-message error";
         loginMessage.textContent = "Please confirm your email first. Check for a 6-digit code.";
-        await supabase.auth.signOut();
+        await window.supabaseClient.auth.signOut();
         return;
       }
 
@@ -370,9 +370,9 @@ if (loginForm && loginMessage) {
 
 // ===== CHECK EXISTING SESSION =====
 (async () => {
-  const { data: { session } } = await supabase.auth.getSession();
+  const { data: { session } } = await window.supabaseClient.auth.getSession();
   if (session) {
-    const { data: profile } = await supabase.from("profiles").select("display_name, account_type").eq("id", session.user.id).single();
+    const { data: profile } = await window.supabaseClient.from("profiles").select("display_name, account_type").eq("id", session.user.id).single();
     if (profile) {
       const navLogin = document.getElementById("nav-login");
       const navSignup = document.getElementById("nav-signup");
