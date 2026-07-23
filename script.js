@@ -56,6 +56,7 @@ if (signupForm && signupMessage) {
     const avatar = data.get("avatar") || "";
     const accountType = data.get("accountType") || "player";
     const terms = data.get("terms");
+    const referralCode = (data.get("referralCode") || "").trim().toUpperCase();
 
     // Advertiser-specific fields
     const companyName = (data.get("companyName") || "").trim();
@@ -120,8 +121,8 @@ if (signupForm && signupMessage) {
         password,
         options: {
           data: accountType === "advertiser"
-            ? { displayName, postcode, accountType, companyName, website, contactName, telephone, crn }
-            : { displayName, postcode, ageRange, avatar, accountType },
+            ? { displayName, postcode, accountType, companyName, website, contactName, telephone, crn, referralCode }
+            : { displayName, postcode, ageRange, avatar, accountType, referralCode },
         },
       });
 
@@ -164,7 +165,8 @@ if (signupForm && signupMessage) {
           profileData.proof_of_address_url = proofUrl;
         }
 
-        const { error: profileError } = await window.supabaseClient.from("profiles").insert(profileData);
+        // DB trigger already creates the profile (incl. referral rewards) — upsert fills extras like proof URL
+        const { error: profileError } = await window.supabaseClient.from("profiles").upsert(profileData, { onConflict: "id" });
 
         if (profileError) throw profileError;
       }

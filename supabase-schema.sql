@@ -164,3 +164,120 @@ create policy "Advertisers can insert own adverts" on public.adverts
 
 create policy "Advertisers can update own adverts" on public.adverts
   for update using (auth.uid() = advertiser_id);
+
+-- ============================================
+-- REFERRAL SYSTEM
+-- ============================================
+
+-- REFERRAL SYSTEM
+-- Players refer players: both get 10,000 HECUs, referrer gets 1 Geo Token per referral
+-- (Geo Token = go to the advertiser's geo location square in the game)
+-- Advertisers refer advertisers: referrer gets 10% discount per referred advertiser (max 50%)
+
+-- Referral columns on profiles
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS referral_code text UNIQUE;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS referred_by uuid REFERENCES public.profiles(id);
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS geo_tokens integer NOT NULL DEFAULT 0;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS referral_discount_percent integer NOT NULL DEFAULT 0;
+
+-- Backfill referral codes for existing users
+UPDATE public.profiles
+SET referral_code = upper(substr(md5(id::text || 'highlife'), 1, 8))
+WHERE referral_code IS NULL;
+
+-- Referrals tracking table
+CREATE TABLE IF NOT EXISTS public.referrals (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  referrer_id uuid NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  referred_id uuid NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  referral_type text NOT NULL CHECK (referral_type IN ('player', 'advertiser')),
+  reward_given boolean NOT NULL DEFAULT false,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  UNIQUE (referred_id)
+);
+
+ALTER TABLE public.referrals ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Users can read own referrals" ON public.referrals;
+CREATE POLICY "Users can read own referrals" ON public.referrals
+  FOR SELECT USING (
+    auth.uid() = referrer_id OR auth.uid() = referred_id
+    OR EXISTS (SELECT 1 FROM public.profiles p WHERE p.id = auth.uid() AND p.account_type = 'admin')
+  );
+
+-- Updated signup trigger: generates referral code + processes referral rewards
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER SET search_path = public
+AS $$
+DECLARE
+  v_account_type text;
+  v_hecu integer;
+  v_approved boolean;
+  v_ref_code text;
+  v_referrer public.profiles%ROWTYPE;
+BEGIN
+  v_account_type := COALESCE(new.raw_user_meta_data->>'accountType', 'player');
+  v_hecu := CASE WHEN v_account_type = 'player' THEN 50000 ELSE 0 END;
+  v_approved := v_account_type != 'advertiser';
+  v_ref_code := upper(substr(md5(new.id::text || 'highlife'), 1, 8));
+
+  -- Look up referrer if a code was supplied
+  IF COALESCE(new.raw_user_meta_data->>'referralCode', '') != '' THEN
+    SELECT * INTO v_referrer FROM public.profiles
+    WHERE referral_code = upper(trim(new.raw_user_meta_data->>'referralCode'))
+    LIMIT 1;
+  END IF;
+
+  -- Player referred by player: new player gets +10,000 HECUs
+  IF v_referrer.id IS NOT NULL AND v_account_type = 'player' AND v_referrer.account_type = 'player' THEN
+    v_hecu := v_hecu + 10000;
+  END IF;
+
+  INSERT INTO public.profiles (id, display_name, email, postcode, age_range, avatar, account_type, hecu_balance, is_approved, company_name, website, contact_name, telephone, crn, referral_code, referred_by)
+  VALUES (
+    new.id,
+    new.raw_user_meta_data->>'displayName',
+    new.email,
+    new.raw_user_meta_data->>'postcode',
+    new.raw_user_meta_data->>'ageRange',
+    new.raw_user_meta_data->>'avatar',
+    v_account_type,
+    v_hecu,
+    v_approved,
+    new.raw_user_meta_data->>'companyName',
+    new.raw_user_meta_data->>'website',
+    new.raw_user_meta_data->>'contactName',
+    new.raw_user_meta_data->>'telephone',
+    new.raw_user_meta_data->>'crn',
+    v_ref_code,
+    v_referrer.id
+  );
+
+  -- Reward the referrer
+  IF v_referrer.id IS NOT NULL THEN
+    IF v_account_type = 'player' AND v_referrer.account_type = 'player' THEN
+      -- Referrer: +10,000 HECUs and +1 Geo Token
+      UPDATE public.profiles
+      SET hecu_balance = hecu_balance + 10000,
+          geo_tokens = geo_tokens + 1
+      WHERE id = v_referrer.id;
+
+      INSERT INTO public.referrals (referrer_id, referred_id, referral_type, reward_given)
+      VALUES (v_referrer.id, new.id, 'player', true);
+
+    ELSIF v_account_type = 'advertiser' AND v_referrer.account_type = 'advertiser' THEN
+      -- Referrer advertiser: +10% discount per referral, capped at 50%
+      UPDATE public.profiles
+      SET referral_discount_percent = LEAST(50, referral_discount_percent + 10)
+      WHERE id = v_referrer.id;
+
+      INSERT INTO public.referrals (referrer_id, referred_id, referral_type, reward_given)
+      VALUES (v_referrer.id, new.id, 'advertiser', true);
+    END IF;
+  END IF;
+
+  RETURN new;
+END;
+$$;

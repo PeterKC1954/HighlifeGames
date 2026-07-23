@@ -59,6 +59,26 @@
           </ul>
         </div>
 
+        <div class="lobby-card lobby-card-referral">
+          <h3>🎁 Refer a friend</h3>
+          <p class="claim-intro">You <b>both get 10,000 HECUs</b> — plus you earn a <b>Geo Token</b> per referral: jump straight to any advertiser's location on the game board!</p>
+          <div class="referral-code-box">
+            <span class="referral-code-label">Your referral code</span>
+            <span class="referral-code" id="referral-code">—</span>
+            <button class="admin-action-btn admin-approve-btn" id="copy-referral">Copy 📋</button>
+          </div>
+          <div class="lobby-stats">
+            <div class="lobby-stat">
+              <span class="lobby-stat-label">Geo Tokens</span>
+              <span class="lobby-stat-value" id="geo-tokens">0</span>
+            </div>
+            <div class="lobby-stat">
+              <span class="lobby-stat-label">Friends referred</span>
+              <span class="lobby-stat-value" id="referral-count">0</span>
+            </div>
+          </div>
+        </div>
+
         <div class="lobby-card lobby-card-online">
           <h3>👥 Players in the lobby</h3>
           <div class="lobby-online-count">
@@ -88,7 +108,7 @@
 
         const { data: profile } = await window.supabaseClient
           .from("profiles")
-          .select("display_name, account_type, hecu_balance, avatar, is_confirmed")
+          .select("display_name, account_type, hecu_balance, avatar, is_confirmed, referral_code, geo_tokens")
           .eq("id", session.user.id)
           .single();
 
@@ -111,6 +131,23 @@
         document.getElementById("player-type").textContent = profile.account_type.charAt(0).toUpperCase() + profile.account_type.slice(1);
         document.getElementById("hecu-amount").textContent = (profile.hecu_balance || 0).toLocaleString();
         document.getElementById("player-avatar").textContent = AVATAR_MAP[profile.avatar] || "🎲";
+
+        // Referral info
+        document.getElementById("referral-code").textContent = profile.referral_code || "—";
+        document.getElementById("geo-tokens").textContent = profile.geo_tokens || 0;
+
+        const { count: refCount } = await window.supabaseClient
+          .from("referrals")
+          .select("id", { count: "exact", head: true })
+          .eq("referrer_id", session.user.id);
+        document.getElementById("referral-count").textContent = refCount || 0;
+
+        document.getElementById("copy-referral").addEventListener("click", () => {
+          navigator.clipboard.writeText(profile.referral_code || "");
+          const btn = document.getElementById("copy-referral");
+          btn.textContent = "Copied! ✅";
+          setTimeout(() => { btn.textContent = "Copy 📋"; }, 2000);
+        });
 
         const { data: waitingPlayers } = await window.supabaseClient
           .from("profiles")

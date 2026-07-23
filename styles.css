@@ -210,7 +210,7 @@ section { padding: 100px clamp(20px, 5vw, 64px); }
 .lobby-stat-label { color: var(--muted); display: block; font-size: .75rem; font-weight: 600; letter-spacing: .1em; margin-bottom: 8px; text-transform: uppercase; }
 .lobby-stat-value { color: var(--white); font-family: "Bebas Neue", sans-serif; font-size: 1.8rem; letter-spacing: .04em; line-height: 1; }
 .lobby-status-waiting { color: var(--orange); }
-.lobby-card-info h3, .lobby-card-online h3 { color: var(--white); font-family: "Sora", sans-serif; font-size: 1.1rem; font-weight: 700; margin: 0 0 20px; }
+.lobby-card-info h3, .lobby-card-online h3, .lobby-card-referral h3 { color: var(--white); font-family: "Sora", sans-serif; font-size: 1.1rem; font-weight: 700; margin: 0 0 20px; }
 .lobby-list { display: flex; flex-direction: column; gap: 14px; list-style: none; margin: 0; padding: 0; }
 .lobby-list li { align-items: center; color: var(--muted); display: flex; font-size: .95rem; gap: 12px; line-height: 1.4; }
 .lobby-list li span { font-size: 1.2rem; }
@@ -289,6 +289,11 @@ section { padding: 100px clamp(20px, 5vw, 64px); }
 .signup-form textarea { background: var(--dark-3); border: 1px solid rgba(255,255,255,.08); border-radius: 10px; color: var(--white); font-family: "Sora", sans-serif; font-size: .95rem; padding: 14px 16px; resize: vertical; transition: border-color .2s; }
 .signup-form textarea:focus { border-color: var(--yellow-green); outline: none; }
 .signup-form textarea::placeholder { color: var(--muted); }
+
+.lobby-card-referral { grid-column: 1 / -1; }
+.referral-code-box { align-items: center; background: var(--dark-3); border: 1px dashed rgba(171,212,10,.35); border-radius: 12px; display: flex; gap: 16px; margin-bottom: 20px; padding: 18px 20px; }
+.referral-code-label { color: var(--muted); font-size: .8rem; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; }
+.referral-code { color: var(--yellow-green); flex: 1; font-family: "Bebas Neue", sans-serif; font-size: 1.8rem; letter-spacing: .2em; }
 
 @media (max-width: 680px) {
   .claim-pricing { flex-direction: column; align-items: stretch; }

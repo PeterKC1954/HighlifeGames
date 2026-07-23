@@ -57,6 +57,27 @@
         <div id="my-claims"><p class="admin-empty">No areas claimed yet.</p></div>
       </div>
 
+      <!-- REFERRALS -->
+      <div class="lobby-card claims-list-card">
+        <h3>🤝 Refer an advertiser</h3>
+        <p class="claim-intro">Know another business that should be in the game? Refer them and get <b>10% off your weekly price per advertiser</b> (up to 50% off)!</p>
+        <div class="referral-code-box">
+          <span class="referral-code-label">Your referral code</span>
+          <span class="referral-code" id="referral-code">—</span>
+          <button class="admin-action-btn admin-approve-btn" id="copy-referral">Copy 📋</button>
+        </div>
+        <div class="lobby-stats">
+          <div class="lobby-stat">
+            <span class="lobby-stat-label">Your discount</span>
+            <span class="lobby-stat-value" id="referral-discount">0%</span>
+          </div>
+          <div class="lobby-stat">
+            <span class="lobby-stat-label">Advertisers referred</span>
+            <span class="lobby-stat-value" id="referral-count">0</span>
+          </div>
+        </div>
+      </div>
+
       <!-- MY ADVERTS -->
       <div class="lobby-card adverts-card">
         <h3>📣 My adverts</h3>
@@ -97,7 +118,7 @@
 
         const { data: profile } = await window.supabaseClient
           .from("profiles")
-          .select("id, display_name, company_name, account_type, is_approved")
+          .select("id, display_name, company_name, account_type, is_approved, referral_code, referral_discount_percent")
           .eq("id", session.user.id)
           .single();
 
@@ -108,6 +129,23 @@
 
         currentUser = profile;
         document.getElementById("advertiser-name").textContent = profile.company_name || profile.display_name;
+
+        // Referral info
+        document.getElementById("referral-code").textContent = profile.referral_code || "\u2014";
+        document.getElementById("referral-discount").textContent = (profile.referral_discount_percent || 0) + "%";
+
+        const { count: refCount } = await window.supabaseClient
+          .from("referrals")
+          .select("id", { count: "exact", head: true })
+          .eq("referrer_id", profile.id);
+        document.getElementById("referral-count").textContent = refCount || 0;
+
+        document.getElementById("copy-referral").addEventListener("click", () => {
+          navigator.clipboard.writeText(profile.referral_code || "");
+          const btn = document.getElementById("copy-referral");
+          btn.textContent = "Copied! \u2705";
+          setTimeout(() => { btn.textContent = "Copy \ud83d\udccb"; }, 2000);
+        });
 
         await loadClaims();
         await loadAdverts();
