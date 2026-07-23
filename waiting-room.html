@@ -106,14 +106,16 @@
           return;
         }
 
-        const { data: profile } = await window.supabaseClient
+        const { data: profile, error: profileError } = await window.supabaseClient
           .from("profiles")
           .select("display_name, account_type, hecu_balance, avatar, is_confirmed, referral_code, geo_tokens")
           .eq("id", session.user.id)
           .single();
 
-        if (!profile) {
-          window.location.href = "index.html";
+        if (profileError || !profile) {
+          // DB error — don't redirect loop, show error
+          console.error("Failed to load profile:", profileError);
+          document.querySelector(".lobby-main").innerHTML = '<div class="lobby-card" style="grid-column:1/-1;text-align:center;padding:40px;"><h3>⚠️ Something went wrong</h3><p style="color:var(--muted)">Could not load your profile. Try refreshing or logging in again.</p><button class="cta" onclick="window.supabaseClient.auth.signOut().then(()=>window.location.href=\'index.html\')">Back to home</button></div>';
           return;
         }
 
@@ -124,6 +126,11 @@
 
         if (profile.account_type === "admin") {
           window.location.href = "dashboard.html";
+          return;
+        }
+
+        if (profile.account_type === "advertiser") {
+          window.location.href = "advertiser.html";
           return;
         }
 

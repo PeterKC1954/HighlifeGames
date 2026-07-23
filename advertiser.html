@@ -116,13 +116,13 @@
         const { data: { session } } = await window.supabaseClient.auth.getSession();
         if (!session) { window.location.href = "index.html"; return; }
 
-        const { data: profile } = await window.supabaseClient
+        const { data: profile, error: profileError } = await window.supabaseClient
           .from("profiles")
           .select("id, display_name, company_name, account_type, is_approved, referral_code, referral_discount_percent")
           .eq("id", session.user.id)
           .single();
 
-        if (!profile || profile.account_type !== "advertiser" || !profile.is_approved) {
+        if (profileError || !profile || profile.account_type !== "advertiser" || !profile.is_approved) {
           window.location.href = "index.html";
           return;
         }

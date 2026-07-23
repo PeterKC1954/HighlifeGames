@@ -488,18 +488,26 @@ if (loginForm && loginMessage) {
     // Validate the session is still alive
     const { data: { user }, error: userError } = await window.supabaseClient.auth.getUser();
     if (userError || !user) {
-      // Stale session — clear it silently
       await window.supabaseClient.auth.signOut();
       return;
     }
 
     const { data: profile, error: profileError } = await window.supabaseClient
       .from("profiles")
-      .select("account_type, is_approved")
+      .select("account_type, is_approved, is_confirmed")
       .eq("id", session.user.id)
       .single();
 
-    if (profileError || !profile) return;
+    // If DB error, sign out and stay on landing page (prevents redirect loop)
+    if (profileError || !profile) {
+      await window.supabaseClient.auth.signOut();
+      return;
+    }
+
+    // Only redirect if confirmed (or admin)
+    if (!profile.is_confirmed && profile.account_type !== "admin") {
+      return;
+    }
 
     if (profile.account_type === "admin") {
       window.location.href = "dashboard.html";
