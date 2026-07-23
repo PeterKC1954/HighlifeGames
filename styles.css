@@ -24,6 +24,10 @@ a { color: inherit; text-decoration: none; }
 .site-menu a:hover { color: var(--white); }
 .nav-signup { background: var(--yellow-green); border: 0; border-radius: 99px; color: var(--dark); cursor: pointer; font-family: "Sora", sans-serif; font-size: .9rem; font-weight: 700; padding: 10px 22px; transition: all .2s; }
 .nav-signup:hover { background: var(--orange); color: var(--white); transform: translateY(-1px); box-shadow: 0 4px 16px rgba(252,171,16,.4); }
+.nav-login { background: transparent; border: 1px solid rgba(255,255,255,.15); border-radius: 99px; color: var(--white); cursor: pointer; font-family: "Sora", sans-serif; font-size: .9rem; font-weight: 600; padding: 10px 20px; transition: all .2s; }
+.nav-login:hover { border-color: var(--white); background: rgba(255,255,255,.05); }
+.nav-login:disabled { cursor: default; opacity: .8; }
+.nav-login:disabled:hover { border-color: rgba(255,255,255,.15); background: transparent; }
 
 .hero { background: var(--dark); background-size: cover; background-position: center; background-repeat: no-repeat; padding: 120px clamp(20px, 5vw, 64px) 100px; text-align: center; position: relative; overflow: hidden; }
 .hero::before { background: linear-gradient(180deg, rgba(15,25,35,.7) 0%, rgba(15,25,35,.85) 60%, rgba(15,25,35,.95) 100%); content: ""; inset: 0; position: absolute; z-index: 0; }
@@ -136,6 +140,9 @@ section { padding: 100px clamp(20px, 5vw, 64px); }
 .resend-link { background: none; border: none; color: var(--muted); cursor: pointer; font-family: "Sora", sans-serif; font-size: .85rem; margin-top: 8px; text-decoration: underline; transition: color .2s; }
 .resend-link:hover { color: var(--white); }
 .resend-link:disabled { opacity: .5; cursor: default; }
+.modal-switch { color: var(--muted); font-size: .9rem; margin: 20px 0 0; }
+.switch-link { background: none; border: none; color: var(--yellow-green); cursor: pointer; font-family: "Sora", sans-serif; font-size: .9rem; font-weight: 600; text-decoration: underline; transition: color .2s; }
+.switch-link:hover { color: var(--white); }
 
 .contact { background: var(--dark-2); }
 .contact .eyebrow { color: var(--blue-bell); }

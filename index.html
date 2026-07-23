@@ -25,6 +25,7 @@
           <a href="#advertisers">Advertisers</a>
           <a href="#faqs">FAQs</a>
           <a href="#contact">Contact Us</a>
+          <button class="nav-login" id="nav-login">Login 🔑</button>
           <button class="nav-signup" id="nav-signup">Join Free 🎮</button>
         </nav>
       </header>
@@ -262,6 +263,24 @@
         </div>
       </div>
     </div>
+    <div class="modal-overlay" id="login-modal" aria-hidden="true">
+      <div class="modal" role="dialog" aria-labelledby="login-title" aria-modal="true">
+        <button class="modal-close" id="login-close" aria-label="Close">✕</button>
+        <div class="modal-body">
+          <p class="eyebrow">🔑 Welcome back</p>
+          <h2 id="login-title">Login to your account</h2>
+          <p class="modal-subtitle">Enter your details to jump back into the game! 🎮</p>
+          <form class="signup-form" id="login-form" novalidate>
+            <input type="email" name="email" placeholder="Email address" required />
+            <input type="password" name="password" placeholder="Password" required />
+            <button type="submit" class="section-cta">Login 🚀</button>
+            <p class="form-message" id="login-message" role="status" aria-live="polite"></p>
+          </form>
+          <p class="modal-switch">No account yet? <button type="button" class="switch-link" id="switch-to-signup">Sign up free</button></p>
+        </div>
+      </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-client.js"></script>
     <script src="script.js"></script>

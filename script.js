@@ -281,3 +281,104 @@ if (resendBtn) {
     resendBtn.textContent = "Didn't get it? Resend code";
   });
 }
+
+// ===== LOGIN MODAL =====
+const loginModal = document.getElementById("login-modal");
+const loginClose = document.getElementById("login-close");
+const loginForm = document.getElementById("login-form");
+const loginMessage = document.getElementById("login-message");
+
+function openLoginModal() {
+  if (loginModal) {
+    loginModal.classList.add("is-open");
+    loginModal.setAttribute("aria-hidden", "false");
+    document.body.style.overflow = "hidden";
+  }
+}
+
+function closeLoginModal() {
+  if (loginModal) {
+    loginModal.classList.remove("is-open");
+    loginModal.setAttribute("aria-hidden", "true");
+    document.body.style.overflow = "";
+    if (loginMessage) { loginMessage.textContent = ""; loginMessage.className = "form-message"; }
+    if (loginForm) loginForm.reset();
+  }
+}
+
+if (loginModal) {
+  document.getElementById("nav-login") && document.getElementById("nav-login").addEventListener("click", openLoginModal);
+  loginClose && loginClose.addEventListener("click", closeLoginModal);
+  loginModal.addEventListener("click", (e) => { if (e.target === loginModal) closeLoginModal(); });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && loginModal.classList.contains("is-open")) closeLoginModal();
+  });
+
+  const switchToSignup = document.getElementById("switch-to-signup");
+  if (switchToSignup) {
+    switchToSignup.addEventListener("click", () => {
+      closeLoginModal();
+      openModal();
+    });
+  }
+}
+
+if (loginForm && loginMessage) {
+  loginForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const data = new FormData(loginForm);
+    const email = (data.get("email") || "").trim();
+    const password = data.get("password") || "";
+
+    loginMessage.className = "form-message";
+    loginMessage.textContent = "";
+
+    if (!email || !password) {
+      loginMessage.classList.add("error");
+      loginMessage.textContent = "Please enter your email and password.";
+      return;
+    }
+
+    loginMessage.classList.add("success");
+    loginMessage.textContent = "Logging in...";
+
+    try {
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({ email, password });
+      if (authError) throw authError;
+
+      const { data: profile } = await supabase.from("profiles").select("display_name, account_type, is_confirmed").eq("id", authData.user.id).single();
+
+      if (profile && !profile.is_confirmed && profile.account_type !== "admin") {
+        loginMessage.className = "form-message error";
+        loginMessage.textContent = "Please confirm your email first. Check for a 6-digit code.";
+        await supabase.auth.signOut();
+        return;
+      }
+
+      loginMessage.className = "form-message success";
+      loginMessage.textContent = `Welcome back, ${profile?.display_name || email}! 🎉`;
+
+      setTimeout(() => {
+        closeLoginModal();
+      }, 2000);
+    } catch (err) {
+      loginMessage.className = "form-message error";
+      loginMessage.textContent = err.message || "Login failed. Check your details.";
+    }
+  });
+}
+
+// ===== CHECK EXISTING SESSION =====
+(async () => {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (session) {
+    const { data: profile } = await supabase.from("profiles").select("display_name, account_type").eq("id", session.user.id).single();
+    if (profile) {
+      const navLogin = document.getElementById("nav-login");
+      const navSignup = document.getElementById("nav-signup");
+      if (navLogin) navLogin.textContent = `Hi, ${profile.display_name} 👋`;
+      if (navLogin) navLogin.disabled = true;
+      if (navSignup) navSignup.style.display = "none";
+    }
+  }
+})();
