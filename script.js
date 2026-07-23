@@ -244,8 +244,8 @@ if (verifyBtn && verifyMessage) {
         verifyMessage.textContent = "Account confirmed! Welcome to Highlife Games! 🎉";
 
         setTimeout(() => {
-          closeModal();
-        }, 2500);
+          window.location.href = "dashboard.html";
+        }, 1500);
       } else {
         verifyMessage.className = "form-message error";
         verifyMessage.textContent = "That code doesn't match. Try again.";
@@ -359,8 +359,8 @@ if (loginForm && loginMessage) {
       loginMessage.textContent = `Welcome back, ${profile?.display_name || email}! 🎉`;
 
       setTimeout(() => {
-        closeLoginModal();
-      }, 2000);
+        window.location.href = "dashboard.html";
+      }, 1500);
     } catch (err) {
       loginMessage.className = "form-message error";
       loginMessage.textContent = err.message || "Login failed. Check your details.";
@@ -372,13 +372,6 @@ if (loginForm && loginMessage) {
 (async () => {
   const { data: { session } } = await window.supabaseClient.auth.getSession();
   if (session) {
-    const { data: profile } = await window.supabaseClient.from("profiles").select("display_name, account_type").eq("id", session.user.id).single();
-    if (profile) {
-      const navLogin = document.getElementById("nav-login");
-      const navSignup = document.getElementById("nav-signup");
-      if (navLogin) navLogin.textContent = `Hi, ${profile.display_name} 👋`;
-      if (navLogin) navLogin.disabled = true;
-      if (navSignup) navSignup.style.display = "none";
-    }
+    window.location.href = "dashboard.html";
   }
 })();

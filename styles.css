@@ -172,6 +172,20 @@ section { padding: 100px clamp(20px, 5vw, 64px); }
 .cookie-essential { background: transparent; border: 1px solid rgba(255,255,255,.15); color: var(--muted); }
 .cookie-essential:hover { border-color: var(--white); color: var(--white); }
 
+.dashboard { align-items: center; background: var(--dark); display: flex; justify-content: center; min-height: 100vh; padding: 40px 20px; text-align: center; }
+.dashboard-card { animation: modalPop .4s cubic-bezier(.16,1,.3,1); background: var(--dark-2); border: 1px solid rgba(255,255,255,.08); border-radius: 24px; box-shadow: 0 24px 80px rgba(0,0,0,.4); max-width: 480px; padding: 56px 40px; width: 100%; }
+.dashboard-logo { display: block; height: auto; margin: 0 auto 28px; max-width: 180px; width: 100%; filter: drop-shadow(0 4px 16px rgba(0,0,0,.4)); }
+.dashboard-title { color: var(--white); font-family: "Bebas Neue", sans-serif; font-size: 3rem; letter-spacing: .04em; line-height: 1; margin: 0 0 20px; text-transform: uppercase; }
+.dashboard-text { color: var(--muted); font-size: 1.05rem; line-height: 1.6; margin: 0 0 12px; }
+.dashboard-text b { color: var(--yellow-green); }
+.dashboard-sub { color: var(--muted); font-size: .95rem; line-height: 1.5; margin: 0 0 32px; }
+.hecu-display { align-items: center; background: var(--dark-3); border: 1px solid rgba(171,212,10,.2); border-radius: 16px; display: flex; flex-direction: column; gap: 6px; margin: 0 0 28px; padding: 24px; }
+.hecu-label { color: var(--muted); font-size: .8rem; font-weight: 600; letter-spacing: .15em; text-transform: uppercase; }
+.hecu-amount { color: var(--yellow-green); font-family: "Bebas Neue", sans-serif; font-size: 2.8rem; letter-spacing: .04em; line-height: 1; }
+.dashboard .cta { margin-bottom: 20px; }
+.dashboard-link { color: var(--muted); font-size: .9rem; transition: color .2s; }
+.dashboard-link:hover { color: var(--white); }
+
 @media (max-width: 680px) {
   .site-nav { padding: 16px 20px; }
   .menu-toggle { align-items: center; background: transparent; border: 0; color: var(--white); cursor: pointer; display: flex; font-size: 1rem; font-weight: 700; gap: 10px; }

@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0f1923" />
+    <title>Dashboard — Highlife Games</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Sora:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="dashboard">
+      <div class="dashboard-card">
+        <img class="dashboard-logo" src="assets/high-life-logo.png" alt="Highlife Games" />
+        <h1 class="dashboard-title">Coming Soon</h1>
+        <p class="dashboard-text">Hey <b id="user-name">there</b>! Your account is ready, but the game isn't live yet. We're putting the finishing touches on Highlife Games. 🎮</p>
+        <div class="hecu-display" id="hecu-display" style="display:none;">
+          <span class="hecu-label">Your HECU Balance</span>
+          <span class="hecu-amount" id="hecu-amount">0</span>
+        </div>
+        <p class="dashboard-sub">We'll email you the moment it's time to play. Stay tuned! 🔥</p>
+        <button class="cta" id="logout-btn">Logout</button>
+        <a class="dashboard-link" href="index.html">← Back to home</a>
+      </div>
+    </main>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-client.js"></script>
+    <script>
+      (async () => {
+        const { data: { session } } = await window.supabaseClient.auth.getSession();
+        if (!session) {
+          window.location.href = "index.html";
+          return;
+        }
+        const { data: profile } = await window.supabaseClient
+          .from("profiles")
+          .select("display_name, account_type, hecu_balance")
+          .eq("id", session.user.id)
+          .single();
+        if (profile) {
+          document.getElementById("user-name").textContent = profile.display_name;
+          if (profile.account_type === "player" && profile.hecu_balance != null) {
+            document.getElementById("hecu-amount").textContent = profile.hecu_balance.toLocaleString();
+            document.getElementById("hecu-display").style.display = "flex";
+          }
+        }
+      })();
+
+      document.getElementById("logout-btn").addEventListener("click", async () => {
+        await window.supabaseClient.auth.signOut();
+        window.location.href = "index.html";
+      });
+    </script>
+  </body>
+</html>

@@ -10,6 +10,7 @@ create table if not exists public.profiles (
   age_range text,
   avatar text,
   account_type text not null default 'player' check (account_type in ('player', 'admin', 'advertiser')),
+  hecu_balance integer not null default 0,
   confirmation_code text,
   is_confirmed boolean not null default false,
   created_at timestamptz not null default now()
@@ -36,8 +37,14 @@ returns trigger
 language plpgsql
 security definer set search_path = public
 as $$
+declare
+  v_account_type text;
+  v_hecu integer;
 begin
-  insert into public.profiles (id, display_name, email, postcode, age_range, avatar, account_type)
+  v_account_type := coalesce(new.raw_user_meta_data->>'accountType', 'player');
+  v_hecu := case when v_account_type = 'player' then 50000 else 0 end;
+
+  insert into public.profiles (id, display_name, email, postcode, age_range, avatar, account_type, hecu_balance)
   values (
     new.id,
     new.raw_user_meta_data->>'displayName',
@@ -45,7 +52,8 @@ begin
     new.raw_user_meta_data->>'postcode',
     new.raw_user_meta_data->>'ageRange',
     new.raw_user_meta_data->>'avatar',
-    coalesce(new.raw_user_meta_data->>'accountType', 'player')
+    v_account_type,
+    v_hecu
   );
   return new;
 end;
