@@ -21,27 +21,38 @@ if (menuToggle && siteMenu) {
 const signupForm = document.getElementById("signup-form");
 const signupMessage = document.getElementById("signup-message");
 
-// Toggle advertiser/player fields based on account type selection
+// Signup modal has two modes: player (default, main CTAs) and advertiser (advertisers section CTA)
 const advertiserFields = document.getElementById("advertiser-fields");
 const playerFields = document.getElementById("player-fields");
-const accountTypeRadios = document.querySelectorAll('input[name="accountType"]');
+const accountTypeInput = document.getElementById("account-type-input");
 
-function toggleAccountFields() {
-  const selected = document.querySelector('input[name="accountType"]:checked');
-  const isAdvertiser = selected && selected.value === "advertiser";
+function setSignupMode(mode) {
+  const isAdvertiser = mode === "advertiser";
+  if (accountTypeInput) accountTypeInput.value = mode;
   if (advertiserFields) advertiserFields.style.display = isAdvertiser ? "block" : "none";
   if (playerFields) playerFields.style.display = isAdvertiser ? "none" : "block";
-  // Toggle required on fields
   if (advertiserFields) {
     advertiserFields.querySelectorAll("input").forEach(el => { el.required = isAdvertiser; });
   }
   if (playerFields) {
     playerFields.querySelectorAll("select, input").forEach(el => { el.required = !isAdvertiser; });
   }
+  // Swap modal copy
+  const eyebrow = document.getElementById("modal-eyebrow");
+  const title = document.getElementById("modal-title");
+  const subtitle = document.getElementById("modal-subtitle-text");
+  if (isAdvertiser) {
+    if (eyebrow) eyebrow.textContent = "📣 Advertise with us";
+    if (title) title.textContent = "Create your advertiser account";
+    if (subtitle) subtitle.textContent = "Claim your postcode area, sponsor questions, and get your brand in the game. Admin approval required.";
+  } else {
+    if (eyebrow) eyebrow.textContent = "🎮 Join the fun";
+    if (title) title.textContent = "Create your account";
+    if (subtitle) subtitle.textContent = "Get early access, claim your avatar, and start your journey to Account Director! 🚀";
+  }
 }
 
-accountTypeRadios.forEach(radio => radio.addEventListener("change", toggleAccountFields));
-toggleAccountFields();
+setSignupMode("player");
 
 if (signupForm && signupMessage) {
   signupForm.addEventListener("submit", async (e) => {
@@ -226,8 +237,9 @@ if (cookieBanner) {
 const signupModal = document.getElementById("signup-modal");
 const modalClose = document.getElementById("modal-close");
 
-function openModal() {
+function openModal(mode) {
   if (signupModal) {
+    setSignupMode(mode === "advertiser" ? "advertiser" : "player");
     signupModal.classList.add("is-open");
     signupModal.setAttribute("aria-hidden", "false");
     document.body.style.overflow = "hidden";
@@ -251,10 +263,15 @@ function closeModal() {
 }
 
 if (signupModal) {
+  // Main CTAs = player signup
   ["nav-signup", "hero-signup", "launch-signup"].forEach((id) => {
     const btn = document.getElementById(id);
-    btn && btn.addEventListener("click", openModal);
+    btn && btn.addEventListener("click", () => openModal("player"));
   });
+
+  // Advertisers section CTA = advertiser signup
+  const advertiserBtn = document.getElementById("advertiser-signup");
+  advertiserBtn && advertiserBtn.addEventListener("click", () => openModal("advertiser"));
 
   modalClose && modalClose.addEventListener("click", closeModal);
 

@@ -122,7 +122,7 @@
               <p>Players earn points they can turn into vouchers for your business. Win-win!</p>
             </div>
           </div>
-          <a class="section-cta" href="#contact">Let's team up <span aria-hidden="true">→</span></a>
+          <button class="section-cta" id="advertiser-signup">Sign up as an advertiser 📣</button>
         </div>
       </section>
 
@@ -193,28 +193,11 @@
       <div class="modal" role="dialog" aria-labelledby="modal-title" aria-modal="true">
         <button class="modal-close" id="modal-close" aria-label="Close">✕</button>
         <div class="modal-body">
-          <p class="eyebrow">🎮 Join the fun</p>
+          <p class="eyebrow" id="modal-eyebrow">🎮 Join the fun</p>
           <h2 id="modal-title">Create your account</h2>
-          <p class="modal-subtitle">Get early access, claim your avatar, and start your journey to Account Director! 🚀</p>
+          <p class="modal-subtitle" id="modal-subtitle-text">Get early access, claim your avatar, and start your journey to Account Director! 🚀</p>
           <form class="signup-form" id="signup-form" novalidate>
-            <div class="account-type-row">
-              <label class="account-type-option">
-                <input type="radio" name="accountType" value="player" checked />
-                <span class="account-type-card">
-                  <span class="account-type-icon">🎮</span>
-                  <span class="account-type-label">Player</span>
-                  <span class="account-type-desc">Play the game, win prizes</span>
-                </span>
-              </label>
-              <label class="account-type-option">
-                <input type="radio" name="accountType" value="advertiser" />
-                <span class="account-type-card">
-                  <span class="account-type-icon">📣</span>
-                  <span class="account-type-label">Advertiser</span>
-                  <span class="account-type-desc">Sponsor questions, reach players</span>
-                </span>
-              </label>
-            </div>
+            <input type="hidden" name="accountType" id="account-type-input" value="player" />
             <div class="form-row">
               <input type="text" name="displayName" placeholder="Display name" required />
               <input type="email" name="email" placeholder="Email address" required />
