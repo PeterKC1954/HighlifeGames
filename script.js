@@ -22,7 +22,7 @@ const signupForm = document.getElementById("signup-form");
 const signupMessage = document.getElementById("signup-message");
 
 if (signupForm && signupMessage) {
-  signupForm.addEventListener("submit", (e) => {
+  signupForm.addEventListener("submit", async (e) => {
     e.preventDefault();
 
     const data = new FormData(signupForm);
@@ -32,6 +32,7 @@ if (signupForm && signupMessage) {
     const postcode = (data.get("postcode") || "").trim();
     const ageRange = data.get("ageRange") || "";
     const avatar = data.get("avatar") || "";
+    const accountType = data.get("accountType") || "player";
     const terms = data.get("terms");
 
     signupMessage.className = "form-message";
@@ -61,30 +62,62 @@ if (signupForm && signupMessage) {
       return;
     }
 
-    const accounts = JSON.parse(localStorage.getItem("hl_accounts") || "[]");
-
-    if (accounts.some((a) => a.email.toLowerCase() === email.toLowerCase())) {
-      signupMessage.classList.add("error");
-      signupMessage.textContent = "An account with this email already exists.";
-      return;
-    }
-
-    const account = {
-      displayName,
-      email,
-      password: btoa(password),
-      postcode,
-      ageRange,
-      avatar,
-      createdAt: new Date().toISOString(),
-    };
-
-    accounts.push(account);
-    localStorage.setItem("hl_accounts", JSON.stringify(accounts));
-
+    signupMessage.textContent = "Creating your account...";
     signupMessage.classList.add("success");
-    signupMessage.textContent = `Welcome, ${displayName}! Your account has been created. 🎉`;
-    signupForm.reset();
+
+    try {
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: { displayName, postcode, ageRange, avatar, accountType },
+        },
+      });
+
+      if (authError) throw authError;
+
+      if (authData.user) {
+        const { error: profileError } = await supabase.from("profiles").insert({
+          id: authData.user.id,
+          display_name: displayName,
+          email,
+          postcode,
+          age_range: ageRange,
+          avatar,
+          account_type: accountType,
+        });
+
+        if (profileError) throw profileError;
+      }
+
+      signupMessage.classList.add("success");
+      signupMessage.textContent = "Sending confirmation code... 📧";
+
+      try {
+        await sendConfirmationCode(email, displayName);
+      } catch (sendErr) {
+        // Code send failed but account was created
+      }
+
+      signupMessage.textContent = "Account created! Check your email for a confirmation code. 📧";
+      signupForm.reset();
+
+      const verifyStep = document.getElementById("verify-step");
+      const verifyEmail = document.getElementById("verify-email");
+      if (verifyStep && verifyEmail) {
+        verifyEmail.textContent = email;
+        verifyStep.style.display = "block";
+        signupForm.style.display = "none";
+      }
+    } catch (err) {
+      signupMessage.classList.add("error");
+      signupMessage.classList.remove("success");
+      if (err.message.includes("already registered") || err.message.includes("already been registered")) {
+        signupMessage.textContent = "An account with this email already exists.";
+      } else {
+        signupMessage.textContent = err.message || "Something went wrong. Please try again.";
+      }
+    }
   });
 }
 
@@ -125,6 +158,14 @@ function closeModal() {
     signupModal.classList.remove("is-open");
     signupModal.setAttribute("aria-hidden", "true");
     document.body.style.overflow = "";
+    const verifyStep = document.getElementById("verify-step");
+    const form = document.getElementById("signup-form");
+    if (verifyStep) verifyStep.style.display = "none";
+    if (form) form.style.display = "flex";
+    const msg = document.getElementById("signup-message");
+    if (msg) { msg.textContent = ""; msg.className = "form-message"; }
+    const vmsg = document.getElementById("verify-message");
+    if (vmsg) { vmsg.textContent = ""; vmsg.className = "form-message"; }
   }
 }
 
@@ -142,5 +183,101 @@ if (signupModal) {
 
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape" && signupModal.classList.contains("is-open")) closeModal();
+  });
+}
+
+const EDGE_FUNCTION_URL = "https://ncgmrylulcwoctmvncrs.supabase.co/functions/v1/send-confirmation";
+let pendingVerifyEmail = null;
+
+async function sendConfirmationCode(email, displayName) {
+  pendingVerifyEmail = email;
+  const response = await fetch(EDGE_FUNCTION_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, displayName }),
+  });
+  return response.json();
+}
+
+const verifyBtn = document.getElementById("verify-btn");
+const verifyMessage = document.getElementById("verify-message");
+const codeInput = document.getElementById("code-input");
+
+if (codeInput) {
+  codeInput.addEventListener("input", (e) => {
+    e.target.value = e.target.value.replace(/\D/g, "");
+  });
+}
+
+if (verifyBtn && verifyMessage) {
+  verifyBtn.addEventListener("click", async () => {
+    const code = (codeInput && codeInput.value || "").trim();
+
+    if (!code || code.length !== 6) {
+      verifyMessage.className = "form-message error";
+      verifyMessage.textContent = "Enter the 6-digit code from your email.";
+      return;
+    }
+
+    verifyBtn.disabled = true;
+    verifyMessage.className = "form-message success";
+    verifyMessage.textContent = "Verifying...";
+
+    try {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("confirmation_code")
+        .eq("email", pendingVerifyEmail)
+        .single();
+
+      if (error) throw error;
+
+      if (data.confirmation_code === code) {
+        const { error: updateError } = await supabase
+          .from("profiles")
+          .update({ is_confirmed: true, confirmation_code: null })
+          .eq("email", pendingVerifyEmail);
+
+        if (updateError) throw updateError;
+
+        verifyMessage.className = "form-message success";
+        verifyMessage.textContent = "Account confirmed! Welcome to Highlife Games! 🎉";
+
+        setTimeout(() => {
+          closeModal();
+        }, 2500);
+      } else {
+        verifyMessage.className = "form-message error";
+        verifyMessage.textContent = "That code doesn't match. Try again.";
+        verifyBtn.disabled = false;
+      }
+    } catch (err) {
+      verifyMessage.className = "form-message error";
+      verifyMessage.textContent = err.message || "Verification failed. Please try again.";
+      verifyBtn.disabled = false;
+    }
+  });
+}
+
+const resendBtn = document.getElementById("resend-code");
+if (resendBtn) {
+  resendBtn.addEventListener("click", async () => {
+    if (!pendingVerifyEmail) return;
+    resendBtn.disabled = true;
+    resendBtn.textContent = "Sending...";
+    try {
+      await sendConfirmationCode(pendingVerifyEmail, "");
+      if (verifyMessage) {
+        verifyMessage.className = "form-message success";
+        verifyMessage.textContent = "Code resent! Check your email. 📧";
+      }
+    } catch (err) {
+      if (verifyMessage) {
+        verifyMessage.className = "form-message error";
+        verifyMessage.textContent = "Failed to resend. Please try again.";
+      }
+    }
+    resendBtn.disabled = false;
+    resendBtn.textContent = "Didn't get it? Resend code";
   });
 }

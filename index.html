@@ -196,6 +196,32 @@
           <h2 id="modal-title">Create your account</h2>
           <p class="modal-subtitle">Get early access, claim your avatar, and start your journey to Account Director! 🚀</p>
           <form class="signup-form" id="signup-form" novalidate>
+            <div class="account-type-row">
+              <label class="account-type-option">
+                <input type="radio" name="accountType" value="player" checked />
+                <span class="account-type-card">
+                  <span class="account-type-icon">🎮</span>
+                  <span class="account-type-label">Player</span>
+                  <span class="account-type-desc">Play the game, win prizes</span>
+                </span>
+              </label>
+              <label class="account-type-option">
+                <input type="radio" name="accountType" value="advertiser" />
+                <span class="account-type-card">
+                  <span class="account-type-icon">📣</span>
+                  <span class="account-type-label">Advertiser</span>
+                  <span class="account-type-desc">Sponsor questions, reach players</span>
+                </span>
+              </label>
+              <label class="account-type-option">
+                <input type="radio" name="accountType" value="admin" />
+                <span class="account-type-card">
+                  <span class="account-type-icon">🛠️</span>
+                  <span class="account-type-label">Admin</span>
+                  <span class="account-type-desc">Manage the platform</span>
+                </span>
+              </label>
+            </div>
             <div class="form-row">
               <input type="text" name="displayName" placeholder="Display name" required />
               <input type="email" name="email" placeholder="Email address" required />
@@ -231,9 +257,21 @@
             <button type="submit" class="section-cta">Create account 🎉</button>
             <p class="form-message" id="signup-message" role="status" aria-live="polite"></p>
           </form>
+
+          <div class="verify-step" id="verify-step" style="display:none;">
+            <p class="verify-icon">📧</p>
+            <h3>Check your email</h3>
+            <p class="verify-text">We've sent a 6-digit code to <b id="verify-email"></b>. Enter it below to confirm your account.</p>
+            <input type="text" id="code-input" class="code-input" placeholder="000000" maxlength="6" inputmode="numeric" />
+            <button type="button" class="section-cta" id="verify-btn">Confirm code ✅</button>
+            <p class="form-message" id="verify-message" role="status" aria-live="polite"></p>
+            <button type="button" class="resend-link" id="resend-code">Didn't get it? Resend code</button>
+          </div>
         </div>
       </div>
     </div>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-client.js"></script>
     <script src="script.js"></script>
   </body>
 </html>
