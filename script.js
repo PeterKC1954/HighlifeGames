@@ -481,15 +481,34 @@ if (loginForm && loginMessage) {
 
 // ===== CHECK EXISTING SESSION =====
 (async () => {
-  const { data: { session } } = await window.supabaseClient.auth.getSession();
-  if (session) {
-    const { data: profile } = await window.supabaseClient.from("profiles").select("account_type, is_approved").eq("id", session.user.id).single();
-    if (profile?.account_type === "admin") {
+  try {
+    const { data: { session }, error: sessionError } = await window.supabaseClient.auth.getSession();
+    if (sessionError || !session) return;
+
+    // Validate the session is still alive
+    const { data: { user }, error: userError } = await window.supabaseClient.auth.getUser();
+    if (userError || !user) {
+      // Stale session — clear it silently
+      await window.supabaseClient.auth.signOut();
+      return;
+    }
+
+    const { data: profile, error: profileError } = await window.supabaseClient
+      .from("profiles")
+      .select("account_type, is_approved")
+      .eq("id", session.user.id)
+      .single();
+
+    if (profileError || !profile) return;
+
+    if (profile.account_type === "admin") {
       window.location.href = "dashboard.html";
-    } else if (profile?.account_type === "advertiser" && profile?.is_approved) {
+    } else if (profile.account_type === "advertiser" && profile.is_approved) {
       window.location.href = "advertiser.html";
-    } else if (profile?.account_type === "player") {
+    } else if (profile.account_type === "player") {
       window.location.href = "waiting-room.html";
     }
+  } catch (err) {
+    // Silently ignore — user stays on landing page
   }
 })();
