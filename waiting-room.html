@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0f1923" />
+    <title>Waiting Room — Highlife Games</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Sora:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="site-nav">
+      <a class="header-title" href="index.html">Highlife Games</a>
+      <nav class="site-menu" id="site-menu" aria-label="Primary navigation">
+        <a href="index.html#how">How to Play</a>
+        <a href="index.html#advertisers">Advertisers</a>
+        <a href="index.html#faqs">FAQs</a>
+        <button class="nav-login" id="logout-btn">Logout 🔑</button>
+      </nav>
+    </header>
+
+    <main class="lobby">
+      <div class="lobby-header">
+        <img class="lobby-logo" src="assets/high-life-logo.png" alt="Highlife Games" />
+        <h1 class="lobby-title">Waiting Room</h1>
+        <p class="lobby-subtitle">The game hasn't launched yet, but you're in! Hang tight — we'll open the doors soon. 🎮</p>
+      </div>
+
+      <div class="lobby-grid">
+        <div class="lobby-card lobby-card-player">
+          <div class="lobby-card-header">
+            <span class="lobby-avatar" id="player-avatar">🎲</span>
+            <div>
+              <h2 id="player-name">Player</h2>
+              <span class="lobby-account-type" id="player-type">Player</span>
+            </div>
+          </div>
+          <div class="lobby-stats">
+            <div class="lobby-stat">
+              <span class="lobby-stat-label">HECU Balance</span>
+              <span class="lobby-stat-value" id="hecu-amount">0</span>
+            </div>
+            <div class="lobby-stat">
+              <span class="lobby-stat-label">Status</span>
+              <span class="lobby-stat-value lobby-status-waiting">Waiting</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="lobby-card lobby-card-info">
+          <h3>📋 What happens next?</h3>
+          <ul class="lobby-list">
+            <li><span>🎲</span> Game servers open soon — you'll be notified</li>
+            <li><span>🏆</span> Pick your avatar and token when the game launches</li>
+            <li><span>💰</span> Your 50,000 HECUs are ready and waiting</li>
+            <li><span>🎁</span> Real prizes will be available in registered games</li>
+          </ul>
+        </div>
+
+        <div class="lobby-card lobby-card-online">
+          <h3>👥 Players in the lobby</h3>
+          <div class="lobby-online-count">
+            <span class="lobby-pulse"></span>
+            <span id="online-count">0</span> waiting
+          </div>
+          <div class="lobby-players" id="lobby-players"></div>
+        </div>
+      </div>
+
+      <div class="lobby-footer">
+        <a class="dashboard-link" href="index.html">← Back to home</a>
+      </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-client.js"></script>
+    <script>
+      const AVATAR_MAP = { dice: "🎲", trophy: "🏆", gift: "🎁", brain: "🧠", shield: "🛡️", star: "⭐" };
+
+      (async () => {
+        const { data: { session } } = await window.supabaseClient.auth.getSession();
+        if (!session) {
+          window.location.href = "index.html";
+          return;
+        }
+
+        const { data: profile } = await window.supabaseClient
+          .from("profiles")
+          .select("display_name, account_type, hecu_balance, avatar, is_confirmed")
+          .eq("id", session.user.id)
+          .single();
+
+        if (!profile) {
+          window.location.href = "index.html";
+          return;
+        }
+
+        if (!profile.is_confirmed && profile.account_type !== "admin") {
+          window.location.href = "index.html";
+          return;
+        }
+
+        if (profile.account_type === "admin") {
+          window.location.href = "dashboard.html";
+          return;
+        }
+
+        document.getElementById("player-name").textContent = profile.display_name;
+        document.getElementById("player-type").textContent = profile.account_type.charAt(0).toUpperCase() + profile.account_type.slice(1);
+        document.getElementById("hecu-amount").textContent = (profile.hecu_balance || 0).toLocaleString();
+        document.getElementById("player-avatar").textContent = AVATAR_MAP[profile.avatar] || "🎲";
+
+        const { data: waitingPlayers } = await window.supabaseClient
+          .from("profiles")
+          .select("display_name, avatar, account_type")
+          .eq("account_type", "player")
+          .order("created_at", { ascending: false })
+          .limit(12);
+
+        if (waitingPlayers) {
+          document.getElementById("online-count").textContent = waitingPlayers.length;
+          const container = document.getElementById("lobby-players");
+          container.innerHTML = waitingPlayers.map(p =>
+            `<div class="lobby-player-chip"><span>${AVATAR_MAP[p.avatar] || "🎲"}</span> ${p.display_name}</div>`
+          ).join("");
+        }
+      })();
+
+      document.getElementById("logout-btn").addEventListener("click", async () => {
+        await window.supabaseClient.auth.signOut();
+        window.location.href = "index.html";
+      });
+    </script>
+  </body>
+</html>

@@ -223,25 +223,48 @@
               <input type="password" name="password" placeholder="Password (min 6 chars)" required />
               <input type="text" name="postcode" placeholder="Post code" required />
             </div>
-            <div class="form-row">
-              <select name="ageRange" required>
-                <option value="" disabled selected>Age range</option>
-                <option value="14-17">14–17</option>
-                <option value="18-24">18–24</option>
-                <option value="25-34">25–34</option>
-                <option value="35-44">35–44</option>
-                <option value="45-54">45–54</option>
-                <option value="55+">55+</option>
-              </select>
-              <select name="avatar" required>
-                <option value="" disabled selected>Choose avatar</option>
-                <option value="dice">🎲 Dice</option>
-                <option value="trophy">🏆 Trophy</option>
-                <option value="gift">🎁 Gift</option>
-                <option value="brain">🧠 Brain</option>
-                <option value="shield">🛡️ Shield</option>
-                <option value="star">⭐ Star</option>
-              </select>
+
+            <div class="advertiser-fields" id="advertiser-fields" style="display:none;">
+              <div class="form-row">
+                <input type="text" name="companyName" placeholder="Company name" />
+                <input type="url" name="website" placeholder="Website (e.g. https://...)" />
+              </div>
+              <div class="form-row">
+                <input type="text" name="contactName" placeholder="Contact name" />
+                <input type="tel" name="telephone" placeholder="Telephone number" />
+              </div>
+              <div class="form-row">
+                <input type="text" name="crn" placeholder="CRN (Company registration number)" />
+              </div>
+              <div class="form-row">
+                <label class="file-upload-label">
+                  <span>Proof of business address (utility bill etc.)</span>
+                  <input type="file" name="proofOfAddress" accept=".pdf,.jpg,.jpeg,.png" />
+                </label>
+              </div>
+            </div>
+
+            <div class="player-fields" id="player-fields">
+              <div class="form-row">
+                <select name="ageRange" required>
+                  <option value="" disabled selected>Age range</option>
+                  <option value="14-17">14–17</option>
+                  <option value="18-24">18–24</option>
+                  <option value="25-34">25–34</option>
+                  <option value="35-44">35–44</option>
+                  <option value="45-54">45–54</option>
+                  <option value="55+">55+</option>
+                </select>
+                <select name="avatar" required>
+                  <option value="" disabled selected>Choose avatar</option>
+                  <option value="dice">🎲 Dice</option>
+                  <option value="trophy">🏆 Trophy</option>
+                  <option value="gift">🎁 Gift</option>
+                  <option value="brain">🧠 Brain</option>
+                  <option value="shield">🛡️ Shield</option>
+                  <option value="star">⭐ Star</option>
+                </select>
+              </div>
             </div>
             <label class="form-check">
               <input type="checkbox" name="terms" required />

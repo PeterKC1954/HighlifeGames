@@ -21,6 +21,28 @@ if (menuToggle && siteMenu) {
 const signupForm = document.getElementById("signup-form");
 const signupMessage = document.getElementById("signup-message");
 
+// Toggle advertiser/player fields based on account type selection
+const advertiserFields = document.getElementById("advertiser-fields");
+const playerFields = document.getElementById("player-fields");
+const accountTypeRadios = document.querySelectorAll('input[name="accountType"]');
+
+function toggleAccountFields() {
+  const selected = document.querySelector('input[name="accountType"]:checked');
+  const isAdvertiser = selected && selected.value === "advertiser";
+  if (advertiserFields) advertiserFields.style.display = isAdvertiser ? "block" : "none";
+  if (playerFields) playerFields.style.display = isAdvertiser ? "none" : "block";
+  // Toggle required on fields
+  if (advertiserFields) {
+    advertiserFields.querySelectorAll("input").forEach(el => { el.required = isAdvertiser; });
+  }
+  if (playerFields) {
+    playerFields.querySelectorAll("select, input").forEach(el => { el.required = !isAdvertiser; });
+  }
+}
+
+accountTypeRadios.forEach(radio => radio.addEventListener("change", toggleAccountFields));
+toggleAccountFields();
+
 if (signupForm && signupMessage) {
   signupForm.addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -35,13 +57,40 @@ if (signupForm && signupMessage) {
     const accountType = data.get("accountType") || "player";
     const terms = data.get("terms");
 
+    // Advertiser-specific fields
+    const companyName = (data.get("companyName") || "").trim();
+    const website = (data.get("website") || "").trim();
+    const contactName = (data.get("contactName") || "").trim();
+    const telephone = (data.get("telephone") || "").trim();
+    const crn = (data.get("crn") || "").trim();
+    const proofFile = data.get("proofOfAddress");
+
     signupMessage.className = "form-message";
     signupMessage.textContent = "";
 
-    if (!displayName || !email || !password || !postcode || !ageRange || !avatar) {
+    if (!displayName || !email || !password || !postcode) {
       signupMessage.classList.add("error");
-      signupMessage.textContent = "Please fill in all fields.";
+      signupMessage.textContent = "Please fill in all required fields.";
       return;
+    }
+
+    if (accountType === "player" && (!ageRange || !avatar)) {
+      signupMessage.classList.add("error");
+      signupMessage.textContent = "Please fill in all required fields.";
+      return;
+    }
+
+    if (accountType === "advertiser") {
+      if (!companyName || !website || !contactName || !telephone || !crn) {
+        signupMessage.classList.add("error");
+        signupMessage.textContent = "Please fill in all advertiser fields.";
+        return;
+      }
+      if (!proofFile || !proofFile.name) {
+        signupMessage.classList.add("error");
+        signupMessage.textContent = "Please upload proof of business address.";
+        return;
+      }
     }
 
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
@@ -70,22 +119,52 @@ if (signupForm && signupMessage) {
         email,
         password,
         options: {
-          data: { displayName, postcode, ageRange, avatar, accountType },
+          data: accountType === "advertiser"
+            ? { displayName, postcode, accountType, companyName, website, contactName, telephone, crn }
+            : { displayName, postcode, ageRange, avatar, accountType },
         },
       });
 
       if (authError) throw authError;
 
       if (authData.user) {
-        const { error: profileError } = await window.supabaseClient.from("profiles").insert({
+        let proofUrl = null;
+
+        // Upload proof of address to Supabase Storage if advertiser
+        if (accountType === "advertiser" && proofFile && proofFile.name) {
+          const fileExt = proofFile.name.split('.').pop();
+          const fileName = `${authData.user.id}-proof.${fileExt}`;
+          const { error: uploadError } = await window.supabaseClient.storage
+            .from('advertiser-docs')
+            .upload(fileName, proofFile);
+          if (uploadError) throw uploadError;
+          const { data: urlData } = window.supabaseClient.storage
+            .from('advertiser-docs')
+            .getPublicUrl(fileName);
+          proofUrl = urlData.publicUrl;
+        }
+
+        const profileData = {
           id: authData.user.id,
           display_name: displayName,
           email,
           postcode,
-          age_range: ageRange,
-          avatar,
           account_type: accountType,
-        });
+        };
+
+        if (accountType === "player") {
+          profileData.age_range = ageRange;
+          profileData.avatar = avatar;
+        } else if (accountType === "advertiser") {
+          profileData.company_name = companyName;
+          profileData.website = website;
+          profileData.contact_name = contactName;
+          profileData.telephone = telephone;
+          profileData.crn = crn;
+          profileData.proof_of_address_url = proofUrl;
+        }
+
+        const { error: profileError } = await window.supabaseClient.from("profiles").insert(profileData);
 
         if (profileError) throw profileError;
       }
@@ -244,7 +323,7 @@ if (verifyBtn && verifyMessage) {
         verifyMessage.textContent = "Account confirmed! Welcome to Highlife Games! 🎉";
 
         setTimeout(() => {
-          window.location.href = "dashboard.html";
+          window.location.href = "waiting-room.html";
         }, 1500);
       } else {
         verifyMessage.className = "form-message error";
@@ -346,7 +425,7 @@ if (loginForm && loginMessage) {
       const { data: authData, error: authError } = await window.supabaseClient.auth.signInWithPassword({ email, password });
       if (authError) throw authError;
 
-      const { data: profile } = await window.supabaseClient.from("profiles").select("display_name, account_type, is_confirmed").eq("id", authData.user.id).single();
+      const { data: profile } = await window.supabaseClient.from("profiles").select("display_name, account_type, is_confirmed, is_approved").eq("id", authData.user.id).single();
 
       if (profile && !profile.is_confirmed && profile.account_type !== "admin") {
         loginMessage.className = "form-message error";
@@ -355,11 +434,24 @@ if (loginForm && loginMessage) {
         return;
       }
 
+      if (profile && profile.account_type === "advertiser" && !profile.is_approved) {
+        loginMessage.className = "form-message error";
+        loginMessage.textContent = "Your advertiser account is pending admin approval. We'll email you once approved.";
+        await window.supabaseClient.auth.signOut();
+        return;
+      }
+
       loginMessage.className = "form-message success";
       loginMessage.textContent = `Welcome back, ${profile?.display_name || email}! 🎉`;
 
       setTimeout(() => {
-        window.location.href = "dashboard.html";
+        if (profile?.account_type === "admin") {
+          window.location.href = "dashboard.html";
+        } else if (profile?.account_type === "advertiser") {
+          window.location.href = "advertiser.html";
+        } else {
+          window.location.href = "waiting-room.html";
+        }
       }, 1500);
     } catch (err) {
       loginMessage.className = "form-message error";
@@ -372,6 +464,13 @@ if (loginForm && loginMessage) {
 (async () => {
   const { data: { session } } = await window.supabaseClient.auth.getSession();
   if (session) {
-    window.location.href = "dashboard.html";
+    const { data: profile } = await window.supabaseClient.from("profiles").select("account_type, is_approved").eq("id", session.user.id).single();
+    if (profile?.account_type === "admin") {
+      window.location.href = "dashboard.html";
+    } else if (profile?.account_type === "advertiser" && profile?.is_approved) {
+      window.location.href = "advertiser.html";
+    } else if (profile?.account_type === "player") {
+      window.location.href = "waiting-room.html";
+    }
   }
 })();

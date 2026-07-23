@@ -1,0 +1,332 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0f1923" />
+    <title>Advertiser Dashboard — Highlife Games</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Sora:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="site-nav">
+      <a class="header-title" href="index.html">Highlife Games</a>
+      <nav class="site-menu" aria-label="Primary navigation">
+        <button class="nav-login" id="logout-btn">Logout 🔑</button>
+      </nav>
+    </header>
+
+    <main class="admin-panel">
+      <div class="admin-header">
+        <img class="lobby-logo" src="assets/high-life-logo.png" alt="Highlife Games" />
+        <h1 class="lobby-title">Advertiser Dashboard</h1>
+        <p class="lobby-subtitle">Welcome, <b id="advertiser-name">Advertiser</b> — claim your area and get your brand in the game.</p>
+      </div>
+
+      <!-- CLAIM AREA -->
+      <div class="lobby-card claim-card">
+        <h3>📍 Claim your area</h3>
+        <p class="claim-intro">Be the <b>first and only</b> advertiser in your postcode area. Your adverts appear on game boards for players registered in that area.</p>
+
+        <div class="claim-pricing">
+          <div class="claim-price-box">
+            <span class="claim-price">£20</span>
+            <span class="claim-price-label">per week</span>
+          </div>
+          <ul class="claim-features">
+            <li>✅ Exclusive claim — one advertiser per area</li>
+            <li>✅ 3 advert changes per month</li>
+            <li>✅ Minimum exposure guaranteed across game boards</li>
+            <li>✅ Adverts matched to players by postcode &amp; age</li>
+          </ul>
+        </div>
+
+        <div class="claim-search">
+          <input type="text" id="postcode-input" placeholder="Enter postcode area (e.g. SW1, M1, LS1)" maxlength="8" />
+          <button class="section-cta" id="check-postcode-btn">Check availability 🔍</button>
+        </div>
+        <div class="claim-result" id="claim-result" style="display:none;"></div>
+        <p class="form-message" id="claim-message" role="status" aria-live="polite"></p>
+      </div>
+
+      <!-- MY CLAIMS -->
+      <div class="lobby-card claims-list-card">
+        <h3>🗺️ My claimed areas</h3>
+        <div id="my-claims"><p class="admin-empty">No areas claimed yet.</p></div>
+      </div>
+
+      <!-- MY ADVERTS -->
+      <div class="lobby-card adverts-card">
+        <h3>📣 My adverts</h3>
+        <p class="claim-intro">You can change your advert up to <b>3 times per month</b> per claimed area.</p>
+        <div id="my-adverts"><p class="admin-empty">Claim an area first, then create your advert.</p></div>
+      </div>
+    </main>
+
+    <!-- ADVERT MODAL -->
+    <div class="modal-overlay" id="advert-modal" aria-hidden="true">
+      <div class="modal" role="dialog" aria-modal="true">
+        <button class="modal-close" id="advert-close" aria-label="Close">✕</button>
+        <div class="modal-body">
+          <p class="eyebrow">📣 Your advert</p>
+          <h2>Create advert</h2>
+          <p class="modal-subtitle">This will appear on game boards in <b id="advert-area"></b></p>
+          <form class="signup-form" id="advert-form" novalidate>
+            <input type="hidden" name="claimId" id="advert-claim-id" />
+            <input type="text" name="title" placeholder="Advert headline (e.g. 50% off at Joe's Pizza)" required maxlength="80" />
+            <textarea name="body" placeholder="Advert text — keep it punchy!" rows="3" maxlength="200"></textarea>
+            <button type="submit" class="section-cta">Publish advert 🚀</button>
+            <p class="form-message" id="advert-message" role="status" aria-live="polite"></p>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-client.js"></script>
+    <script>
+      let currentUser = null;
+      let myClaims = [];
+      let myAdverts = [];
+
+      (async () => {
+        const { data: { session } } = await window.supabaseClient.auth.getSession();
+        if (!session) { window.location.href = "index.html"; return; }
+
+        const { data: profile } = await window.supabaseClient
+          .from("profiles")
+          .select("id, display_name, company_name, account_type, is_approved")
+          .eq("id", session.user.id)
+          .single();
+
+        if (!profile || profile.account_type !== "advertiser" || !profile.is_approved) {
+          window.location.href = "index.html";
+          return;
+        }
+
+        currentUser = profile;
+        document.getElementById("advertiser-name").textContent = profile.company_name || profile.display_name;
+
+        await loadClaims();
+        await loadAdverts();
+      })();
+
+      async function loadClaims() {
+        const { data } = await window.supabaseClient
+          .from("postcode_claims")
+          .select("*")
+          .eq("advertiser_id", currentUser.id)
+          .order("created_at", { ascending: false });
+        myClaims = data || [];
+        renderClaims();
+      }
+
+      async function loadAdverts() {
+        const { data } = await window.supabaseClient
+          .from("adverts")
+          .select("*")
+          .eq("advertiser_id", currentUser.id)
+          .order("created_at", { ascending: false });
+        myAdverts = data || [];
+        renderAdverts();
+      }
+
+      function renderClaims() {
+        const el = document.getElementById("my-claims");
+        if (!myClaims.length) {
+          el.innerHTML = '<p class="admin-empty">No areas claimed yet.</p>';
+          return;
+        }
+        el.innerHTML = myClaims.map(c => {
+          const statusClass = c.status === "active" ? "badge-confirmed" : "badge-pending";
+          const statusLabel = c.status === "pending" ? "⏳ Awaiting payment" : c.status === "active" ? "✅ Active" : c.status;
+          return `<div class="claim-item">
+            <div class="claim-item-info">
+              <span class="claim-postcode">📍 ${c.postcode.toUpperCase()}</span>
+              <span class="${statusClass}">${statusLabel}</span>
+            </div>
+            <div class="claim-item-meta">
+              <span>£${c.price_per_week}/week</span>
+              <span>·</span>
+              <span>${c.changes_remaining} advert changes left this month</span>
+              <button class="admin-action-btn admin-approve-btn" onclick="openAdvertModal('${c.id}', '${c.postcode.toUpperCase()}')">New advert ✏️</button>
+            </div>
+          </div>`;
+        }).join("");
+      }
+
+      function renderAdverts() {
+        const el = document.getElementById("my-adverts");
+        if (!myAdverts.length) {
+          el.innerHTML = '<p class="admin-empty">Claim an area first, then create your advert.</p>';
+          return;
+        }
+        el.innerHTML = myAdverts.map(a => {
+          const claim = myClaims.find(c => c.id === a.claim_id);
+          const area = claim ? claim.postcode.toUpperCase() : "—";
+          return `<div class="claim-item">
+            <div class="claim-item-info">
+              <span class="claim-postcode">${a.title}</span>
+              <span class="${a.is_active ? "badge-confirmed" : "badge-pending"}">${a.is_active ? "✅ Live" : "⏳ Pending"}</span>
+            </div>
+            <div class="claim-item-meta">
+              <span>📍 ${area}</span>
+              ${a.body ? `<span>·</span><span>${a.body}</span>` : ""}
+            </div>
+          </div>`;
+        }).join("");
+      }
+
+      // ===== POSTCODE CHECK & CLAIM =====
+      document.getElementById("check-postcode-btn").addEventListener("click", async () => {
+        const input = document.getElementById("postcode-input");
+        const resultEl = document.getElementById("claim-result");
+        const msgEl = document.getElementById("claim-message");
+        const postcode = input.value.trim().toUpperCase().replace(/\s+/g, "");
+
+        msgEl.textContent = "";
+        msgEl.className = "form-message";
+
+        if (!postcode || postcode.length < 2) {
+          msgEl.className = "form-message error";
+          msgEl.textContent = "Enter a valid postcode area (e.g. SW1, M1, LS1).";
+          resultEl.style.display = "none";
+          return;
+        }
+
+        resultEl.style.display = "block";
+        resultEl.innerHTML = "<p>Checking availability...</p>";
+
+        const { data: existing } = await window.supabaseClient
+          .from("postcode_claims")
+          .select("id, advertiser_id")
+          .ilike("postcode", postcode)
+          .in("status", ["pending", "active"]);
+
+        if (existing && existing.length > 0) {
+          const isMine = existing.some(c => c.advertiser_id === currentUser.id);
+          resultEl.innerHTML = isMine
+            ? `<div class="claim-taken">📍 <b>${postcode}</b> — you've already claimed this area! ✅</div>`
+            : `<div class="claim-taken">😔 <b>${postcode}</b> is already claimed by another advertiser. Try a nearby area!</div>`;
+          return;
+        }
+
+        resultEl.innerHTML = `
+          <div class="claim-available">
+            <p>🎉 <b>${postcode}</b> is available!</p>
+            <p class="claim-available-sub">Be the first advertiser in this area — £20/week, 3 advert changes a month, minimum exposure guaranteed across game boards.</p>
+            <button class="section-cta" id="claim-btn">Claim ${postcode} now 🚀</button>
+          </div>`;
+
+        document.getElementById("claim-btn").addEventListener("click", async () => {
+          msgEl.className = "form-message success";
+          msgEl.textContent = "Reserving your slot...";
+
+          const { error } = await window.supabaseClient.from("postcode_claims").insert({
+            advertiser_id: currentUser.id,
+            postcode: postcode,
+            status: "pending",
+            price_per_week: 20,
+            changes_remaining: 3,
+            payment_status: "unpaid",
+          });
+
+          if (error) {
+            msgEl.className = "form-message error";
+            msgEl.textContent = error.message.includes("duplicate") || error.message.includes("one_claim_per_postcode")
+              ? "Someone just claimed this area! Try another."
+              : "Failed to claim: " + error.message;
+            return;
+          }
+
+          msgEl.className = "form-message success";
+          msgEl.textContent = `${postcode} reserved! 🎉 Slot held — payment setup coming soon. Your claim is active once payment is made.`;
+          resultEl.style.display = "none";
+          input.value = "";
+          await loadClaims();
+        });
+      });
+
+      // ===== ADVERT MODAL =====
+      const advertModal = document.getElementById("advert-modal");
+
+      window.openAdvertModal = (claimId, area) => {
+        const claim = myClaims.find(c => c.id === claimId);
+        if (claim && claim.changes_remaining <= 0) {
+          alert("You've used all 3 advert changes this month for this area.");
+          return;
+        }
+        document.getElementById("advert-claim-id").value = claimId;
+        document.getElementById("advert-area").textContent = area;
+        advertModal.classList.add("is-open");
+        advertModal.setAttribute("aria-hidden", "false");
+      };
+
+      function closeAdvertModal() {
+        advertModal.classList.remove("is-open");
+        advertModal.setAttribute("aria-hidden", "true");
+        document.getElementById("advert-form").reset();
+        const m = document.getElementById("advert-message");
+        m.textContent = ""; m.className = "form-message";
+      }
+
+      document.getElementById("advert-close").addEventListener("click", closeAdvertModal);
+      advertModal.addEventListener("click", (e) => { if (e.target === advertModal) closeAdvertModal(); });
+
+      document.getElementById("advert-form").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const data = new FormData(e.target);
+        const claimId = data.get("claimId");
+        const title = (data.get("title") || "").trim();
+        const body = (data.get("body") || "").trim();
+        const msgEl = document.getElementById("advert-message");
+
+        if (!title) {
+          msgEl.className = "form-message error";
+          msgEl.textContent = "Please add a headline.";
+          return;
+        }
+
+        msgEl.className = "form-message success";
+        msgEl.textContent = "Publishing...";
+
+        const { error: advertError } = await window.supabaseClient.from("adverts").insert({
+          claim_id: claimId,
+          advertiser_id: currentUser.id,
+          title,
+          body,
+          is_active: false,
+        });
+
+        if (advertError) {
+          msgEl.className = "form-message error";
+          msgEl.textContent = "Failed: " + advertError.message;
+          return;
+        }
+
+        // Decrement changes remaining
+        const claim = myClaims.find(c => c.id === claimId);
+        if (claim) {
+          await window.supabaseClient
+            .from("postcode_claims")
+            .update({ changes_remaining: Math.max(0, claim.changes_remaining - 1) })
+            .eq("id", claimId);
+        }
+
+        msgEl.textContent = "Advert submitted! It'll go live once your claim is active. 🎉";
+        setTimeout(async () => {
+          closeAdvertModal();
+          await loadClaims();
+          await loadAdverts();
+        }, 2000);
+      });
+
+      document.getElementById("logout-btn").addEventListener("click", async () => {
+        await window.supabaseClient.auth.signOut();
+        window.location.href = "index.html";
+      });
+    </script>
+  </body>
+</html>

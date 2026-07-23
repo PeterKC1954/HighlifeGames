@@ -4,49 +4,242 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#0f1923" />
-    <title>Dashboard — Highlife Games</title>
+    <title>Admin Panel — Highlife Games</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Sora:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <main class="dashboard">
-      <div class="dashboard-card">
-        <img class="dashboard-logo" src="assets/high-life-logo.png" alt="Highlife Games" />
-        <h1 class="dashboard-title">Coming Soon</h1>
-        <p class="dashboard-text">Hey <b id="user-name">there</b>! Your account is ready, but the game isn't live yet. We're putting the finishing touches on Highlife Games. 🎮</p>
-        <div class="hecu-display" id="hecu-display" style="display:none;">
-          <span class="hecu-label">Your HECU Balance</span>
-          <span class="hecu-amount" id="hecu-amount">0</span>
+    <header class="site-nav">
+      <a class="header-title" href="index.html">Highlife Games</a>
+      <nav class="site-menu" id="site-menu" aria-label="Primary navigation">
+        <a href="#" id="tab-overview">Overview</a>
+        <a href="#" id="tab-users">Users</a>
+        <button class="nav-login" id="logout-btn">Logout 🔑</button>
+      </nav>
+    </header>
+
+    <main class="admin-panel">
+      <section class="admin-section" id="section-overview">
+        <div class="admin-header">
+          <img class="lobby-logo" src="assets/high-life-logo.png" alt="Highlife Games" />
+          <h1 class="lobby-title">Admin Panel</h1>
+          <p class="lobby-subtitle">Welcome back, <b id="admin-name">Admin</b> — manage your platform here.</p>
         </div>
-        <p class="dashboard-sub">We'll email you the moment it's time to play. Stay tuned! 🔥</p>
-        <button class="cta" id="logout-btn">Logout</button>
-        <a class="dashboard-link" href="index.html">← Back to home</a>
-      </div>
+
+        <div class="admin-stats">
+          <div class="admin-stat-card">
+            <span class="admin-stat-icon">👥</span>
+            <span class="admin-stat-value" id="stat-total-users">0</span>
+            <span class="admin-stat-label">Total Users</span>
+          </div>
+          <div class="admin-stat-card">
+            <span class="admin-stat-icon">🎮</span>
+            <span class="admin-stat-value" id="stat-players">0</span>
+            <span class="admin-stat-label">Players</span>
+          </div>
+          <div class="admin-stat-card">
+            <span class="admin-stat-icon">📣</span>
+            <span class="admin-stat-value" id="stat-advertisers">0</span>
+            <span class="admin-stat-label">Advertisers</span>
+          </div>
+          <div class="admin-stat-card">
+            <span class="admin-stat-icon">✅</span>
+            <span class="admin-stat-value" id="stat-confirmed">0</span>
+            <span class="admin-stat-label">Confirmed</span>
+          </div>
+          <div class="admin-stat-card">
+            <span class="admin-stat-icon">⏳</span>
+            <span class="admin-stat-value" id="stat-pending-approval">0</span>
+            <span class="admin-stat-label">Pending Approval</span>
+          </div>
+        </div>
+
+        <div class="admin-coming-soon">
+          <h3>🚧 More features coming soon</h3>
+          <p>Game management, question editor, advertiser dashboard, and prize controls are in development.</p>
+        </div>
+      </section>
+
+      <section class="admin-section" id="section-users" style="display:none;">
+        <div class="admin-header">
+          <h1 class="lobby-title">Users</h1>
+          <p class="lobby-subtitle">All registered accounts on the platform.</p>
+        </div>
+
+        <div class="admin-search-bar">
+          <input type="text" id="user-search" placeholder="Search by name or email..." />
+        </div>
+
+        <div class="admin-table-wrap">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Type</th>
+                <th>HECUs</th>
+                <th>Confirmed</th>
+                <th>Approved</th>
+                <th>Joined</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="users-tbody"></tbody>
+          </table>
+        </div>
+      </section>
     </main>
+
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-client.js"></script>
     <script>
+      const AVATAR_MAP = { dice: "🎲", trophy: "🏆", gift: "🎁", brain: "🧠", shield: "🛡️", star: "⭐" };
+      let allUsers = [];
+
       (async () => {
         const { data: { session } } = await window.supabaseClient.auth.getSession();
         if (!session) {
           window.location.href = "index.html";
           return;
         }
+
         const { data: profile } = await window.supabaseClient
           .from("profiles")
-          .select("display_name, account_type, hecu_balance")
+          .select("display_name, account_type")
           .eq("id", session.user.id)
           .single();
-        if (profile) {
-          document.getElementById("user-name").textContent = profile.display_name;
-          if (profile.account_type === "player" && profile.hecu_balance != null) {
-            document.getElementById("hecu-amount").textContent = profile.hecu_balance.toLocaleString();
-            document.getElementById("hecu-display").style.display = "flex";
-          }
+
+        if (!profile || profile.account_type !== "admin") {
+          window.location.href = "index.html";
+          return;
         }
+
+        document.getElementById("admin-name").textContent = profile.display_name;
+
+        const { data: users, error } = await window.supabaseClient
+          .from("profiles")
+          .select("id, display_name, email, account_type, hecu_balance, is_confirmed, is_approved, avatar, company_name, website, contact_name, telephone, crn, proof_of_address_url, created_at")
+          .order("created_at", { ascending: false });
+
+        if (error) {
+          console.error("Failed to load users:", error);
+          return;
+        }
+
+        allUsers = users || [];
+        renderStats();
+        renderUsers(allUsers);
       })();
+
+      function renderStats() {
+        const total = allUsers.length;
+        const players = allUsers.filter(u => u.account_type === "player").length;
+        const advertisers = allUsers.filter(u => u.account_type === "advertiser").length;
+        const confirmed = allUsers.filter(u => u.is_confirmed).length;
+        const pendingApproval = allUsers.filter(u => u.account_type === "advertiser" && !u.is_approved).length;
+        document.getElementById("stat-total-users").textContent = total;
+        document.getElementById("stat-players").textContent = players;
+        document.getElementById("stat-advertisers").textContent = advertisers;
+        document.getElementById("stat-confirmed").textContent = confirmed;
+        document.getElementById("stat-pending-approval").textContent = pendingApproval;
+      }
+
+      function renderUsers(users) {
+        const tbody = document.getElementById("users-tbody");
+        if (!users.length) {
+          tbody.innerHTML = '<tr><td colspan="8" class="admin-empty">No users found.</td></tr>';
+          return;
+        }
+        tbody.innerHTML = users.map(u => {
+          const typeClass = u.account_type === "admin" ? "badge-admin" : u.account_type === "advertiser" ? "badge-advertiser" : "badge-player";
+          const confirmed = u.is_confirmed
+            ? '<span class="badge-confirmed">✅ Yes</span>'
+            : '<span class="badge-pending">⏳ Pending</span>';
+          const approved = u.account_type === "advertiser"
+            ? (u.is_approved
+              ? '<span class="badge-confirmed">✅ Approved</span>'
+              : '<span class="badge-pending">⏳ Pending</span>')
+            : '<span class="badge-confirmed">—</span>';
+          const date = new Date(u.created_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+          const avatar = AVATAR_MAP[u.avatar] || "—";
+          const hecus = u.hecu_balance != null ? u.hecu_balance.toLocaleString() : "—";
+
+          let actions = "";
+          if (u.account_type === "advertiser" && !u.is_approved) {
+            actions = `<button class="admin-action-btn admin-approve-btn" data-user-id="${u.id}">Approve</button>`;
+          } else if (u.account_type === "advertiser" && u.is_approved) {
+            actions = `<button class="admin-action-btn admin-revoke-btn" data-user-id="${u.id}">Revoke</button>`;
+          }
+
+          let nameCell = `${avatar} ${u.display_name || "—"}`;
+          if (u.account_type === "advertiser" && u.company_name) {
+            nameCell += `<br><span class="admin-sub-text">${u.company_name}</span>`;
+          }
+
+          let emailCell = u.email || "—";
+          if (u.account_type === "advertiser" && u.proof_of_address_url) {
+            emailCell += `<br><a href="${u.proof_of_address_url}" target="_blank" class="admin-proof-link">View proof of address</a>`;
+          }
+
+          return `<tr>
+            <td>${nameCell}</td>
+            <td>${emailCell}</td>
+            <td><span class="admin-badge ${typeClass}">${u.account_type}</span></td>
+            <td>${hecus}</td>
+            <td>${confirmed}</td>
+            <td>${approved}</td>
+            <td>${date}</td>
+            <td>${actions}</td>
+          </tr>`;
+        }).join("");
+
+        // Bind approve/revoke buttons
+        document.querySelectorAll(".admin-approve-btn").forEach(btn => {
+          btn.addEventListener("click", () => toggleApproval(btn.dataset.userId, true));
+        });
+        document.querySelectorAll(".admin-revoke-btn").forEach(btn => {
+          btn.addEventListener("click", () => toggleApproval(btn.dataset.userId, false));
+        });
+      }
+
+      async function toggleApproval(userId, approve) {
+        const { error } = await window.supabaseClient
+          .from("profiles")
+          .update({ is_approved: approve })
+          .eq("id", userId);
+        if (error) {
+          alert("Failed to update approval: " + error.message);
+          return;
+        }
+        // Update local data
+        const user = allUsers.find(u => u.id === userId);
+        if (user) user.is_approved = approve;
+        renderStats();
+        renderUsers(allUsers);
+      }
+
+      document.getElementById("tab-overview").addEventListener("click", (e) => {
+        e.preventDefault();
+        document.getElementById("section-overview").style.display = "block";
+        document.getElementById("section-users").style.display = "none";
+      });
+      document.getElementById("tab-users").addEventListener("click", (e) => {
+        e.preventDefault();
+        document.getElementById("section-overview").style.display = "none";
+        document.getElementById("section-users").style.display = "block";
+      });
+
+      document.getElementById("user-search").addEventListener("input", (e) => {
+        const q = e.target.value.toLowerCase().trim();
+        if (!q) { renderUsers(allUsers); return; }
+        const filtered = allUsers.filter(u =>
+          (u.display_name || "").toLowerCase().includes(q) ||
+          (u.email || "").toLowerCase().includes(q)
+        );
+        renderUsers(filtered);
+      });
 
       document.getElementById("logout-btn").addEventListener("click", async () => {
         await window.supabaseClient.auth.signOut();
