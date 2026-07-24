@@ -30,12 +30,12 @@ a { color: inherit; text-decoration: none; }
 .nav-login:disabled { cursor: default; opacity: .8; }
 .nav-login:disabled:hover { border-color: rgba(255,255,255,.15); background: transparent; }
 
-.hero { background: var(--dark); background-size: cover; background-position: center; background-repeat: no-repeat; padding: 120px clamp(20px, 5vw, 64px) 100px; text-align: center; position: relative; overflow: hidden; }
+.hero { background: var(--dark); background-size: cover; background-position: center; background-repeat: no-repeat; background-attachment: fixed; padding: 120px clamp(20px, 5vw, 64px) 100px; text-align: center; position: relative; overflow: hidden; min-height: 100vh; display: flex; align-items: center; justify-content: center; }
 .hero::before { background: linear-gradient(180deg, rgba(15,25,35,.7) 0%, rgba(15,25,35,.85) 60%, rgba(15,25,35,.95) 100%); content: ""; inset: 0; position: absolute; z-index: 0; }
-.hero-content { position: relative; z-index: 1; margin: 0 auto; max-width: 760px; }
+.hero-content { position: relative; z-index: 1; margin: 0 auto; max-width: 1400px; }
 .eyebrow { color: var(--yellow-green); font-size: .85rem; font-weight: 700; letter-spacing: .2em; margin: 0 0 24px; text-transform: uppercase; }
 .brand-lockup { margin: 0 0 28px; }
-.hero-logo { display: block; height: auto; margin: 0 auto; max-width: 440px; width: 100%; filter: drop-shadow(0 8px 32px rgba(0,0,0,.5)); }
+.hero-logo { display: block; height: auto; margin: 0 auto; max-width: 1320px; width: 100%; filter: drop-shadow(0 8px 32px rgba(0,0,0,.5)); }
 .hero-copy { color: var(--white); font-size: 1.6rem; font-weight: 600; line-height: 1.35; margin: 0 0 36px; }
 .hero-cta-row { display: flex; flex-wrap: wrap; gap: 16px; justify-content: center; margin-bottom: 16px; }
 .cta-secondary { background: transparent; border: 2px solid rgba(255,255,255,.2); }
@@ -364,7 +364,7 @@ section { padding: 100px clamp(20px, 5vw, 64px); }
   .site-menu a { border-top: 1px solid rgba(255,255,255,.06); padding: 14px 0; }
   .site-menu a:first-child { border-top: 0; }
   .nav-signup { margin-top: 10px; align-self: flex-start; }
-  .hero { padding: 80px 20px 80px; }
+  .hero { padding: 80px 20px 80px; min-height: 100vh; background-attachment: scroll; }
   .hero-stat { flex: 1 1 calc(50% - 8px); min-width: 0; }
   .hero-stats { gap: 10px; }
   .highlight { font-size: .9rem; padding: 10px 18px; }
