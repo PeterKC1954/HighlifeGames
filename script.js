@@ -1,5 +1,18 @@
 document.getElementById("year").textContent = new Date().getFullYear();
 
+// ===== NAV SCROLL STATE =====
+const siteNav = document.querySelector(".site-nav");
+window.addEventListener("scroll", () => {
+  if (window.scrollY > 40) siteNav.classList.add("scrolled");
+  else siteNav.classList.remove("scrolled");
+});
+
+// ===== PRICING SIGNUP BUTTONS =====
+["pricing-signup", "pricing-signup-2"].forEach(id => {
+  const btn = document.getElementById(id);
+  if (btn) btn.addEventListener("click", () => openModal("advertiser"));
+});
+
 const menuToggle = document.querySelector(".menu-toggle");
 const siteMenu = document.querySelector(".site-menu");
 
