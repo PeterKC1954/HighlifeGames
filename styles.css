@@ -225,7 +225,7 @@ section { padding: 100px clamp(20px, 5vw, 64px); }
 .lobby-footer .dashboard-link { color: var(--muted); font-size: .9rem; transition: color .2s; }
 .lobby-footer .dashboard-link:hover { color: var(--white); }
 
-.admin-panel { max-width: 1000px; margin: 0 auto; padding: 48px 20px 80px; }
+.admin-panel { width: 100%; max-width: 100%; margin: 0; padding: 48px 32px 80px; box-sizing: border-box; }
 .admin-header { text-align: center; margin-bottom: 40px; }
 .admin-stats { display: grid; gap: 16px; grid-template-columns: repeat(4, 1fr); margin-bottom: 40px; }
 .admin-stat-card { align-items: center; background: var(--dark-2); border: 1px solid rgba(255,255,255,.08); border-radius: 16px; display: flex; flex-direction: column; gap: 6px; padding: 28px 16px; }
