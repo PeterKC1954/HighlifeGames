@@ -1,11 +1,14 @@
--- Highlife Games — Supabase schema
+-- Highlife Games — Database schema (custom auth, no Supabase Auth)
 -- Run this in the Supabase SQL Editor (Dashboard > SQL > New Query)
 
--- Profiles table (linked to auth.users)
+-- Enable pgcrypto for password hashing
+create extension if not exists pgcrypto;
+
+-- Profiles table (standalone, no auth.users FK)
 create table if not exists public.profiles (
-  id uuid primary key references auth.users(id) on delete cascade,
+  id uuid primary key default gen_random_uuid(),
   display_name text not null,
-  email text not null,
+  email text not null unique,
   postcode text,
   age_range text,
   avatar text,
@@ -20,6 +23,11 @@ create table if not exists public.profiles (
   is_approved boolean not null default false,
   confirmation_code text,
   is_confirmed boolean not null default false,
+  password_hash text,
+  referral_code text,
+  referred_by uuid references public.profiles(id) on delete set null,
+  geo_tokens integer not null default 0,
+  referral_discount_percent integer not null default 0,
   created_at timestamptz not null default now()
 );
 

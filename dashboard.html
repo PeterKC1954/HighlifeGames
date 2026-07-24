@@ -94,41 +94,32 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-client.js"></script>
+    <script src="auth.js"></script>
     <script>
       const AVATAR_MAP = { dice: "🎲", trophy: "🏆", gift: "🎁", brain: "🧠", shield: "🛡️", star: "⭐" };
       let allUsers = [];
 
       (async () => {
-        const { data: { session } } = await window.supabaseClient.auth.getSession();
-        if (!session) {
+        const token = window.authApi.getToken();
+        if (!token) { window.location.href = "index.html"; return; }
+
+        const session = await window.authApi.validateSession(token);
+        if (!session || session.error || session.account_type !== "admin") {
+          if (session && session.error) window.authApi.clearToken();
           window.location.href = "index.html";
           return;
         }
 
-        const { data: profile, error: profileError } = await window.supabaseClient
-          .from("profiles")
-          .select("display_name, account_type")
-          .eq("id", session.user.id)
-          .single();
+        document.getElementById("admin-name").textContent = session.display_name;
 
-        if (profileError || !profile || profile.account_type !== "admin") {
-          window.location.href = "index.html";
-          return;
-        }
-
-        document.getElementById("admin-name").textContent = profile.display_name;
-
-        const { data: users, error } = await window.supabaseClient
-          .from("profiles")
-          .select("id, display_name, email, account_type, hecu_balance, is_confirmed, is_approved, avatar, company_name, website, contact_name, telephone, crn, proof_of_address_url, created_at")
-          .order("created_at", { ascending: false });
+        const { data: users, error } = await window.supabaseClient.rpc("get_all_profiles", { p_token: token });
 
         if (error) {
           console.error("Failed to load users:", error);
           return;
         }
 
-        allUsers = users || [];
+        allUsers = Array.isArray(users) ? users : [];
         renderStats();
         renderUsers(allUsers);
       })();
@@ -205,12 +196,10 @@
       }
 
       async function toggleApproval(userId, approve) {
-        const { error } = await window.supabaseClient
-          .from("profiles")
-          .update({ is_approved: approve })
-          .eq("id", userId);
-        if (error) {
-          alert("Failed to update approval: " + error.message);
+        const token = window.authApi.getToken();
+        const { data: result, error } = await window.supabaseClient.rpc("admin_update_approval", { p_token: token, p_user_id: userId, p_approved: approve });
+        if (error || (result && result.error)) {
+          alert("Failed to update approval: " + (error?.message || result?.error || "Unknown error"));
           return;
         }
         // Update local data
@@ -242,7 +231,9 @@
       });
 
       document.getElementById("logout-btn").addEventListener("click", async () => {
-        await window.supabaseClient.auth.signOut();
+        const token = window.authApi.getToken();
+        if (token) await window.authApi.logout(token);
+        window.authApi.clearToken();
         window.location.href = "index.html";
       });
     </script>

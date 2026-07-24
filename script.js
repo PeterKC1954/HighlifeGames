@@ -127,59 +127,28 @@ if (signupForm && signupMessage) {
     signupMessage.classList.add("success");
 
     try {
-      const { data: authData, error: authError } = await window.supabaseClient.auth.signUp({
-        email,
-        password,
-        options: {
-          data: accountType === "advertiser"
-            ? { displayName, postcode, accountType, companyName, website, contactName, telephone, crn, referralCode }
-            : { displayName, postcode, ageRange, avatar, accountType, referralCode },
-        },
+      const result = await window.authApi.signup({
+        email, password, displayName, postcode, accountType, ageRange, avatar,
+        companyName, website, contactName, telephone, crn, referralCode,
       });
 
-      if (authError) throw authError;
+      if (result && result.error) throw new Error(result.error);
 
-      if (authData.user) {
-        let proofUrl = null;
-
-        // Upload proof of address to Supabase Storage if advertiser
-        if (accountType === "advertiser" && proofFile && proofFile.name) {
-          const fileExt = proofFile.name.split('.').pop();
-          const fileName = `${authData.user.id}-proof.${fileExt}`;
-          const { error: uploadError } = await window.supabaseClient.storage
-            .from('advertiser-docs')
-            .upload(fileName, proofFile);
-          if (uploadError) throw uploadError;
+      // Upload proof of address to Supabase Storage if advertiser
+      if (accountType === "advertiser" && proofFile && proofFile.name && result.user_id) {
+        const fileExt = proofFile.name.split('.').pop();
+        const fileName = `${result.user_id}-proof.${fileExt}`;
+        const { error: uploadError } = await window.supabaseClient.storage
+          .from('advertiser-docs')
+          .upload(fileName, proofFile);
+        if (!uploadError) {
           const { data: urlData } = window.supabaseClient.storage
             .from('advertiser-docs')
             .getPublicUrl(fileName);
-          proofUrl = urlData.publicUrl;
+          await window.supabaseClient.from("profiles")
+            .update({ proof_of_address_url: urlData.publicUrl })
+            .eq("id", result.user_id);
         }
-
-        const profileData = {
-          id: authData.user.id,
-          display_name: displayName,
-          email,
-          postcode,
-          account_type: accountType,
-        };
-
-        if (accountType === "player") {
-          profileData.age_range = ageRange;
-          profileData.avatar = avatar;
-        } else if (accountType === "advertiser") {
-          profileData.company_name = companyName;
-          profileData.website = website;
-          profileData.contact_name = contactName;
-          profileData.telephone = telephone;
-          profileData.crn = crn;
-          profileData.proof_of_address_url = proofUrl;
-        }
-
-        // DB trigger already creates the profile (incl. referral rewards) — upsert fills extras like proof URL
-        const { error: profileError } = await window.supabaseClient.from("profiles").upsert(profileData, { onConflict: "id" });
-
-        if (profileError) throw profileError;
       }
 
       signupMessage.classList.add("success");
@@ -204,7 +173,7 @@ if (signupForm && signupMessage) {
     } catch (err) {
       signupMessage.classList.add("error");
       signupMessage.classList.remove("success");
-      if (err.message.includes("already registered") || err.message.includes("already been registered")) {
+      if (err.message.includes("already registered")) {
         signupMessage.textContent = "An account with this email already exists.";
       } else {
         signupMessage.textContent = err.message || "Something went wrong. Please try again.";
@@ -289,12 +258,29 @@ let pendingVerifyEmail = null;
 
 async function sendConfirmationCode(email, displayName) {
   pendingVerifyEmail = email;
-  const response = await fetch(EDGE_FUNCTION_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, displayName }),
-  });
-  return response.json();
+
+  // Generate 6-digit code
+  const code = String(Math.floor(100000 + Math.random() * 900000));
+
+  // Save code in DB
+  await window.authApi.setConfirmationCode(email, code);
+
+  // Send email via Edge Function
+  try {
+    const response = await fetch(EDGE_FUNCTION_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "apikey": SUPABASE_ANON_KEY,
+        "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+      },
+      body: JSON.stringify({ email, displayName, code }),
+    });
+    return response.json();
+  } catch (err) {
+    // Email failed but code is saved in DB
+    console.error("Email send failed:", err);
+  }
 }
 
 const verifyBtn = document.getElementById("verify-btn");
@@ -322,33 +308,21 @@ if (verifyBtn && verifyMessage) {
     verifyMessage.textContent = "Verifying...";
 
     try {
-      const { data, error } = await window.supabaseClient
-        .from("profiles")
-        .select("confirmation_code")
-        .eq("email", pendingVerifyEmail)
-        .single();
+      const result = await window.authApi.confirmCode(pendingVerifyEmail, code);
 
-      if (error) throw error;
-
-      if (data.confirmation_code === code) {
-        const { error: updateError } = await window.supabaseClient
-          .from("profiles")
-          .update({ is_confirmed: true, confirmation_code: null })
-          .eq("email", pendingVerifyEmail);
-
-        if (updateError) throw updateError;
-
-        verifyMessage.className = "form-message success";
-        verifyMessage.textContent = "Account confirmed! Welcome to Highlife Games! 🎉";
-
-        setTimeout(() => {
-          window.location.href = "waiting-room.html";
-        }, 1500);
-      } else {
+      if (result && result.error) {
         verifyMessage.className = "form-message error";
-        verifyMessage.textContent = "That code doesn't match. Try again.";
+        verifyMessage.textContent = result.error === "Invalid code" ? "That code doesn't match. Try again." : result.error;
         verifyBtn.disabled = false;
+        return;
       }
+
+      verifyMessage.className = "form-message success";
+      verifyMessage.textContent = "Account confirmed! Welcome to Highlife Games! 🎉";
+
+      setTimeout(() => {
+        window.location.href = "waiting-room.html";
+      }, 1500);
     } catch (err) {
       verifyMessage.className = "form-message error";
       verifyMessage.textContent = err.message || "Verification failed. Please try again.";
@@ -441,36 +415,22 @@ if (loginForm && loginMessage) {
     loginMessage.textContent = "Logging in...";
 
     try {
-      const { data: authData, error: authError } = await window.supabaseClient.auth.signInWithPassword({ email, password });
-      if (authError) throw authError;
+      const result = await window.authApi.login(email, password);
 
-      const { data: profile } = await window.supabaseClient.from("profiles").select("display_name, account_type, is_confirmed, is_approved").eq("id", authData.user.id).single();
-
-      if (profile && !profile.is_confirmed && profile.account_type !== "admin") {
+      if (result && result.error) {
         loginMessage.className = "form-message error";
-        loginMessage.textContent = "Please confirm your email first. Check for a 6-digit code.";
-        await window.supabaseClient.auth.signOut();
+        loginMessage.textContent = result.error;
         return;
       }
 
-      if (profile && profile.account_type === "advertiser" && !profile.is_approved) {
-        loginMessage.className = "form-message error";
-        loginMessage.textContent = "Your advertiser account is pending admin approval. We'll email you once approved.";
-        await window.supabaseClient.auth.signOut();
-        return;
-      }
+      // Save session token
+      window.authApi.saveToken(result.token);
 
       loginMessage.className = "form-message success";
-      loginMessage.textContent = `Welcome back, ${profile?.display_name || email}! 🎉`;
+      loginMessage.textContent = `Welcome back, ${result.display_name || email}! 🎉`;
 
       setTimeout(() => {
-        if (profile?.account_type === "admin") {
-          window.location.href = "dashboard.html";
-        } else if (profile?.account_type === "advertiser") {
-          window.location.href = "advertiser.html";
-        } else {
-          window.location.href = "waiting-room.html";
-        }
+        window.authApi.routeByAccountType(result.account_type, result.is_approved);
       }, 1500);
     } catch (err) {
       loginMessage.className = "form-message error";
@@ -482,41 +442,23 @@ if (loginForm && loginMessage) {
 // ===== CHECK EXISTING SESSION =====
 (async () => {
   try {
-    const { data: { session }, error: sessionError } = await window.supabaseClient.auth.getSession();
-    if (sessionError || !session) return;
+    const token = window.authApi.getToken();
+    if (!token) return;
 
-    // Validate the session is still alive
-    const { data: { user }, error: userError } = await window.supabaseClient.auth.getUser();
-    if (userError || !user) {
-      await window.supabaseClient.auth.signOut();
-      return;
-    }
+    const result = await window.authApi.validateSession(token);
 
-    const { data: profile, error: profileError } = await window.supabaseClient
-      .from("profiles")
-      .select("account_type, is_approved, is_confirmed")
-      .eq("id", session.user.id)
-      .single();
-
-    // If DB error, sign out and stay on landing page (prevents redirect loop)
-    if (profileError || !profile) {
-      await window.supabaseClient.auth.signOut();
+    if (!result || result.error) {
+      window.authApi.clearToken();
       return;
     }
 
     // Only redirect if confirmed (or admin)
-    if (!profile.is_confirmed && profile.account_type !== "admin") {
+    if (!result.is_confirmed && result.account_type !== "admin") {
       return;
     }
 
-    if (profile.account_type === "admin") {
-      window.location.href = "dashboard.html";
-    } else if (profile.account_type === "advertiser" && profile.is_approved) {
-      window.location.href = "advertiser.html";
-    } else if (profile.account_type === "player") {
-      window.location.href = "waiting-room.html";
-    }
+    window.authApi.routeByAccountType(result.account_type, result.is_approved);
   } catch (err) {
-    // Silently ignore — user stays on landing page
+    window.authApi.clearToken();
   }
 })();

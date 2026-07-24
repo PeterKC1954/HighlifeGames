@@ -107,41 +107,50 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-client.js"></script>
+    <script src="auth.js"></script>
     <script>
       let currentUser = null;
       let myClaims = [];
       let myAdverts = [];
 
       (async () => {
-        const { data: { session } } = await window.supabaseClient.auth.getSession();
-        if (!session) { window.location.href = "index.html"; return; }
+        const token = window.authApi.getToken();
+        if (!token) { window.location.href = "index.html"; return; }
 
-        const { data: profile, error: profileError } = await window.supabaseClient
-          .from("profiles")
-          .select("id, display_name, company_name, account_type, is_approved, referral_code, referral_discount_percent")
-          .eq("id", session.user.id)
-          .single();
-
-        if (profileError || !profile || profile.account_type !== "advertiser" || !profile.is_approved) {
+        const session = await window.authApi.validateSession(token);
+        if (!session || session.error) {
+          if (session && session.error) window.authApi.clearToken();
           window.location.href = "index.html";
           return;
         }
 
-        currentUser = profile;
-        document.getElementById("advertiser-name").textContent = profile.company_name || profile.display_name;
+        if (session.account_type !== "advertiser" || !session.is_approved) {
+          window.location.href = "index.html";
+          return;
+        }
+
+        // Load profile data via RPC
+        const profile = await window.supabaseClient.rpc("get_my_profile", { p_token: token });
+        const profileData = profile.data;
+
+        if (!profileData || profileData.error) {
+          window.authApi.clearToken();
+          window.location.href = "index.html";
+          return;
+        }
+
+        currentUser = profileData;
+        document.getElementById("advertiser-name").textContent = profileData.company_name || profileData.display_name;
 
         // Referral info
-        document.getElementById("referral-code").textContent = profile.referral_code || "\u2014";
-        document.getElementById("referral-discount").textContent = (profile.referral_discount_percent || 0) + "%";
+        document.getElementById("referral-code").textContent = profileData.referral_code || "\u2014";
+        document.getElementById("referral-discount").textContent = (profileData.referral_discount_percent || 0) + "%";
 
-        const { count: refCount } = await window.supabaseClient
-          .from("referrals")
-          .select("id", { count: "exact", head: true })
-          .eq("referrer_id", profile.id);
+        const { data: refCount } = await window.supabaseClient.rpc("get_my_referral_count", { p_token: token });
         document.getElementById("referral-count").textContent = refCount || 0;
 
         document.getElementById("copy-referral").addEventListener("click", () => {
-          navigator.clipboard.writeText(profile.referral_code || "");
+          navigator.clipboard.writeText(profileData.referral_code || "");
           const btn = document.getElementById("copy-referral");
           btn.textContent = "Copied! \u2705";
           setTimeout(() => { btn.textContent = "Copy \ud83d\udccb"; }, 2000);
@@ -152,22 +161,16 @@
       })();
 
       async function loadClaims() {
-        const { data } = await window.supabaseClient
-          .from("postcode_claims")
-          .select("*")
-          .eq("advertiser_id", currentUser.id)
-          .order("created_at", { ascending: false });
-        myClaims = data || [];
+        const token = window.authApi.getToken();
+        const { data } = await window.supabaseClient.rpc("get_my_claims", { p_token: token });
+        myClaims = Array.isArray(data) ? data : [];
         renderClaims();
       }
 
       async function loadAdverts() {
-        const { data } = await window.supabaseClient
-          .from("adverts")
-          .select("*")
-          .eq("advertiser_id", currentUser.id)
-          .order("created_at", { ascending: false });
-        myAdverts = data || [];
+        const token = window.authApi.getToken();
+        const { data } = await window.supabaseClient.rpc("get_my_adverts", { p_token: token });
+        myAdverts = Array.isArray(data) ? data : [];
         renderAdverts();
       }
 
@@ -237,17 +240,10 @@
         resultEl.style.display = "block";
         resultEl.innerHTML = "<p>Checking availability...</p>";
 
-        const { data: existing } = await window.supabaseClient
-          .from("postcode_claims")
-          .select("id, advertiser_id")
-          .ilike("postcode", postcode)
-          .in("status", ["pending", "active"]);
+        const { data: checkResult } = await window.supabaseClient.rpc("check_postcode_available", { p_postcode: postcode });
 
-        if (existing && existing.length > 0) {
-          const isMine = existing.some(c => c.advertiser_id === currentUser.id);
-          resultEl.innerHTML = isMine
-            ? `<div class="claim-taken">📍 <b>${postcode}</b> — you've already claimed this area! ✅</div>`
-            : `<div class="claim-taken">😔 <b>${postcode}</b> is already claimed by another advertiser. Try a nearby area!</div>`;
+        if (checkResult && !checkResult.available) {
+          resultEl.innerHTML = `<div class="claim-taken">😔 <b>${postcode}</b> is already claimed by another advertiser. Try a nearby area!</div>`;
           return;
         }
 
@@ -262,20 +258,15 @@
           msgEl.className = "form-message success";
           msgEl.textContent = "Reserving your slot...";
 
-          const { error } = await window.supabaseClient.from("postcode_claims").insert({
-            advertiser_id: currentUser.id,
-            postcode: postcode,
-            status: "pending",
-            price_per_week: 20,
-            changes_remaining: 3,
-            payment_status: "unpaid",
-          });
+          const token = window.authApi.getToken();
+          const { data: claimResult, error: claimError } = await window.supabaseClient.rpc("create_postcode_claim", { p_token: token, p_postcode: postcode });
 
-          if (error) {
+          if (claimError || (claimResult && claimResult.error)) {
             msgEl.className = "form-message error";
-            msgEl.textContent = error.message.includes("duplicate") || error.message.includes("one_claim_per_postcode")
+            const errMsg = claimResult?.error || claimError?.message || "";
+            msgEl.textContent = errMsg.includes("already_claimed")
               ? "Someone just claimed this area! Try another."
-              : "Failed to claim: " + error.message;
+              : "Failed to claim: " + errMsg;
             return;
           }
 
@@ -330,27 +321,15 @@
         msgEl.className = "form-message success";
         msgEl.textContent = "Publishing...";
 
-        const { error: advertError } = await window.supabaseClient.from("adverts").insert({
-          claim_id: claimId,
-          advertiser_id: currentUser.id,
-          title,
-          body,
-          is_active: false,
+        const token = window.authApi.getToken();
+        const { data: advertResult, error: advertError } = await window.supabaseClient.rpc("create_advert", {
+          p_token: token, p_claim_id: claimId, p_title: title, p_body: body,
         });
 
-        if (advertError) {
+        if (advertError || (advertResult && advertResult.error)) {
           msgEl.className = "form-message error";
-          msgEl.textContent = "Failed: " + advertError.message;
+          msgEl.textContent = "Failed: " + (advertResult?.error || advertError?.message || "Unknown error");
           return;
-        }
-
-        // Decrement changes remaining
-        const claim = myClaims.find(c => c.id === claimId);
-        if (claim) {
-          await window.supabaseClient
-            .from("postcode_claims")
-            .update({ changes_remaining: Math.max(0, claim.changes_remaining - 1) })
-            .eq("id", claimId);
         }
 
         msgEl.textContent = "Advert submitted! It'll go live once your claim is active. 🎉";
@@ -362,7 +341,9 @@
       });
 
       document.getElementById("logout-btn").addEventListener("click", async () => {
-        await window.supabaseClient.auth.signOut();
+        const token = window.authApi.getToken();
+        if (token) await window.authApi.logout(token);
+        window.authApi.clearToken();
         window.location.href = "index.html";
       });
     </script>

@@ -96,84 +96,81 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-client.js"></script>
+    <script src="auth.js"></script>
     <script>
       const AVATAR_MAP = { dice: "🎲", trophy: "🏆", gift: "🎁", brain: "🧠", shield: "🛡️", star: "⭐" };
 
       (async () => {
-        const { data: { session } } = await window.supabaseClient.auth.getSession();
-        if (!session) {
+        const token = window.authApi.getToken();
+        if (!token) { window.location.href = "index.html"; return; }
+
+        const session = await window.authApi.validateSession(token);
+        if (!session || session.error) {
+          window.authApi.clearToken();
           window.location.href = "index.html";
           return;
         }
 
-        const { data: profile, error: profileError } = await window.supabaseClient
-          .from("profiles")
-          .select("display_name, account_type, hecu_balance, avatar, is_confirmed, referral_code, geo_tokens")
-          .eq("id", session.user.id)
-          .single();
-
-        if (profileError || !profile) {
-          // DB error — don't redirect loop, show error
-          console.error("Failed to load profile:", profileError);
-          document.querySelector(".lobby-main").innerHTML = '<div class="lobby-card" style="grid-column:1/-1;text-align:center;padding:40px;"><h3>⚠️ Something went wrong</h3><p style="color:var(--muted)">Could not load your profile. Try refreshing or logging in again.</p><button class="cta" onclick="window.supabaseClient.auth.signOut().then(()=>window.location.href=\'index.html\')">Back to home</button></div>';
-          return;
-        }
-
-        if (!profile.is_confirmed && profile.account_type !== "admin") {
+        if (!session.is_confirmed && session.account_type !== "admin") {
           window.location.href = "index.html";
           return;
         }
 
-        if (profile.account_type === "admin") {
+        if (session.account_type === "admin") {
           window.location.href = "dashboard.html";
           return;
         }
 
-        if (profile.account_type === "advertiser") {
+        if (session.account_type === "advertiser") {
           window.location.href = "advertiser.html";
           return;
         }
 
-        document.getElementById("player-name").textContent = profile.display_name;
-        document.getElementById("player-type").textContent = profile.account_type.charAt(0).toUpperCase() + profile.account_type.slice(1);
-        document.getElementById("hecu-amount").textContent = (profile.hecu_balance || 0).toLocaleString();
-        document.getElementById("player-avatar").textContent = AVATAR_MAP[profile.avatar] || "🎲";
+        // Load profile data via RPC
+        const profile = await window.supabaseClient.rpc("get_my_profile", { p_token: token });
+        const profileData = profile.data;
+
+        if (!profileData || profileData.error) {
+          window.authApi.clearToken();
+          window.location.href = "index.html";
+          return;
+        }
+
+        document.getElementById("player-name").textContent = profileData.display_name;
+        document.getElementById("player-type").textContent = profileData.account_type.charAt(0).toUpperCase() + profileData.account_type.slice(1);
+        document.getElementById("hecu-amount").textContent = (profileData.hecu_balance || 0).toLocaleString();
+        document.getElementById("player-avatar").textContent = AVATAR_MAP[profileData.avatar] || "🎲";
 
         // Referral info
-        document.getElementById("referral-code").textContent = profile.referral_code || "—";
-        document.getElementById("geo-tokens").textContent = profile.geo_tokens || 0;
+        document.getElementById("referral-code").textContent = profileData.referral_code || "—";
+        document.getElementById("geo-tokens").textContent = profileData.geo_tokens || 0;
 
-        const { count: refCount } = await window.supabaseClient
-          .from("referrals")
-          .select("id", { count: "exact", head: true })
-          .eq("referrer_id", session.user.id);
+        const { data: refCount } = await window.supabaseClient.rpc("get_my_referral_count", { p_token: token });
         document.getElementById("referral-count").textContent = refCount || 0;
 
         document.getElementById("copy-referral").addEventListener("click", () => {
-          navigator.clipboard.writeText(profile.referral_code || "");
+          navigator.clipboard.writeText(profileData.referral_code || "");
           const btn = document.getElementById("copy-referral");
           btn.textContent = "Copied! ✅";
           setTimeout(() => { btn.textContent = "Copy 📋"; }, 2000);
         });
 
-        const { data: waitingPlayers } = await window.supabaseClient
-          .from("profiles")
-          .select("display_name, avatar, account_type")
-          .eq("account_type", "player")
-          .order("created_at", { ascending: false })
-          .limit(12);
+        const { data: waitingPlayers } = await window.supabaseClient.rpc("get_waiting_players");
 
         if (waitingPlayers) {
-          document.getElementById("online-count").textContent = waitingPlayers.length;
+          const players = Array.isArray(waitingPlayers) ? waitingPlayers : [];
+          document.getElementById("online-count").textContent = players.length;
           const container = document.getElementById("lobby-players");
-          container.innerHTML = waitingPlayers.map(p =>
+          container.innerHTML = players.map(p =>
             `<div class="lobby-player-chip"><span>${AVATAR_MAP[p.avatar] || "🎲"}</span> ${p.display_name}</div>`
           ).join("");
         }
       })();
 
       document.getElementById("logout-btn").addEventListener("click", async () => {
-        await window.supabaseClient.auth.signOut();
+        const token = window.authApi.getToken();
+        if (token) await window.authApi.logout(token);
+        window.authApi.clearToken();
         window.location.href = "index.html";
       });
     </script>

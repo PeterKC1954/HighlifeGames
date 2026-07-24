@@ -16,7 +16,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { email, displayName } = await req.json();
+    const { email, displayName, code: passedCode } = await req.json();
 
     if (!email) {
       return new Response(JSON.stringify({ error: "Email is required" }), {
@@ -25,7 +25,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    const code = passedCode || Math.floor(100000 + Math.random() * 900000).toString();
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
