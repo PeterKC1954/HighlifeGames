@@ -7,12 +7,6 @@ window.addEventListener("scroll", () => {
   else siteNav.classList.remove("scrolled");
 });
 
-// ===== PRICING SIGNUP BUTTONS =====
-["pricing-signup", "pricing-signup-2"].forEach(id => {
-  const btn = document.getElementById(id);
-  if (btn) btn.addEventListener("click", () => openModal("advertiser"));
-});
-
 const menuToggle = document.querySelector(".menu-toggle");
 const siteMenu = document.querySelector(".site-menu");
 
