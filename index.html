@@ -119,6 +119,28 @@
         </div>
       </section>
 
+      <section class="board-game-section reveal" id="board-preview" aria-labelledby="board-title">
+        <div class="section-inner">
+          <p class="eyebrow">🎲 See it in action</p>
+          <h2 id="board-title">The Game Board</h2>
+          <p class="section-copy">Roll the dice, land on Company Squares, answer quiz questions, and collect assets. Click the dice or hit roll to try it out!</p>
+          <div class="board-game-wrap">
+            <canvas id="board-canvas"></canvas>
+          </div>
+          <div class="board-game-controls">
+            <p class="board-info" id="board-info">Click the dice or press Roll to play</p>
+            <button class="cta" id="board-roll-btn">🎲 Roll the dice</button>
+          </div>
+          <div class="board-legend">
+            <span class="legend-item"><span class="legend-dot" style="background:#abd40a"></span> Company</span>
+            <span class="legend-item"><span class="legend-dot" style="background:#33a1fd"></span> Asset</span>
+            <span class="legend-item"><span class="legend-dot" style="background:#fcab10"></span> Bonus</span>
+            <span class="legend-item"><span class="legend-dot" style="background:#d02f7c"></span> Event</span>
+            <span class="legend-item"><span class="legend-dot" style="background:#fff"></span> Start</span>
+          </div>
+        </div>
+      </section>
+
       <section class="advertisers reveal" id="advertisers" aria-labelledby="advertisers-title">
         <div class="section-inner">
           <p class="eyebrow eyebrow-light">📣 Brands love us</p>
@@ -344,5 +366,6 @@
     <script src="supabase-client.js"></script>
     <script src="auth.js"></script>
     <script src="script.js"></script>
+    <script src="board-game.js"></script>
   </body>
 </html>
