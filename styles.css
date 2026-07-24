@@ -500,7 +500,7 @@ main, .site-footer, .cookie-banner { position: relative; z-index: 1; }
 .footer-links a:hover { color: var(--yellow-green); }
 .footer-btn { background: none; border: 0; color: var(--muted); cursor: pointer; font-family: "Sora", sans-serif; font-size: .9rem; padding: 0; text-align: left; transition: color .2s; }
 .footer-btn:hover { color: var(--yellow-green); }
-.footer-copy { text-align: center; color: var(--muted); font-size: .8rem; padding-top: 24px; border-top: 1px solid rgba(255,255,255,.04); }
+.footer-copy { text-align: center; color: var(--muted); font-size: .8rem; line-height: 1.6; padding-top: 24px; border-top: 1px solid rgba(255,255,255,.04); }
 
 @media (max-width: 768px) {
   .footer-inner { grid-template-columns: 1fr 1fr; gap: 28px; }
