@@ -217,6 +217,39 @@ if (signupForm && signupMessage) {
   });
 }
 
+// ===== CONTACT FORM =====
+const contactForm = document.querySelector(".contact-form");
+if (contactForm) {
+  contactForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const data = new FormData(contactForm);
+    const name = (data.get("name") || "").trim();
+    const email = (data.get("email") || "").trim();
+    const message = (data.get("message") || "").trim();
+
+    if (!name || !email || !message) return;
+
+    const btn = contactForm.querySelector("button[type='submit']");
+    const originalText = btn.innerHTML;
+    btn.innerHTML = "Sending…";
+    btn.disabled = true;
+
+    try {
+      const { data: result, error } = await window.supabaseClient.rpc("submit_contact_form", {
+        p_name: name, p_email: email, p_message: message,
+      });
+      if (error || (result && result.error)) throw new Error(error?.message || result?.error);
+      window.showToast("Message sent! We'll get back to you soon. ✉️", "success");
+      contactForm.reset();
+    } catch (err) {
+      window.showToast("Failed to send: " + (err.message || "Unknown error"), "error");
+    } finally {
+      btn.innerHTML = originalText;
+      btn.disabled = false;
+    }
+  });
+}
+
 const cookieBanner = document.getElementById("cookie-banner");
 const cookieAccept = document.getElementById("cookie-accept");
 const cookieEssential = document.getElementById("cookie-essential");

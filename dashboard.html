@@ -20,6 +20,7 @@
       <nav class="site-menu" id="site-menu" aria-label="Primary navigation">
         <a href="#" id="tab-overview">Overview</a>
         <a href="#" id="tab-users">Users</a>
+        <a href="#" id="tab-messages">Messages <span id="msg-badge" style="background:var(--hot-berry);color:#fff;border-radius:99px;font-size:.65rem;padding:2px 6px;margin-left:4px;display:none;"></span></a>
         <button class="nav-login" id="logout-btn">Logout 🔑</button>
       </nav>
     </header>
@@ -98,6 +99,14 @@
             <tbody id="users-tbody"></tbody>
           </table>
         </div>
+      </section>
+
+      <section class="admin-section" id="section-messages" style="display:none;">
+        <div class="admin-header">
+          <h1 class="lobby-title">Contact Messages</h1>
+          <p class="lobby-subtitle">Submissions from the website contact form.</p>
+        </div>
+        <div id="messages-list"></div>
       </section>
     </main>
 
@@ -262,12 +271,65 @@
         e.preventDefault();
         document.getElementById("section-overview").style.display = "block";
         document.getElementById("section-users").style.display = "none";
+        document.getElementById("section-messages").style.display = "none";
       });
       document.getElementById("tab-users").addEventListener("click", (e) => {
         e.preventDefault();
         document.getElementById("section-overview").style.display = "none";
         document.getElementById("section-users").style.display = "block";
+        document.getElementById("section-messages").style.display = "none";
       });
+      document.getElementById("tab-messages").addEventListener("click", (e) => {
+        e.preventDefault();
+        document.getElementById("section-overview").style.display = "none";
+        document.getElementById("section-users").style.display = "none";
+        document.getElementById("section-messages").style.display = "block";
+        loadMessages();
+      });
+
+      async function loadMessages() {
+        const token = window.authApi.getToken();
+        const { data: messages, error } = await window.supabaseClient.rpc("get_contact_submissions", { p_token: token });
+        const el = document.getElementById("messages-list");
+        if (error || (messages && messages.error)) {
+          el.innerHTML = '<p class="admin-empty">Failed to load messages.</p>';
+          return;
+        }
+        const list = Array.isArray(messages) ? messages : [];
+        const unread = list.filter(m => !m.is_read).length;
+        const badge = document.getElementById("msg-badge");
+        if (unread > 0) { badge.textContent = unread; badge.style.display = "inline"; } else { badge.style.display = "none"; }
+
+        if (!list.length) {
+          el.innerHTML = '<p class="admin-empty">No messages yet.</p>';
+          return;
+        }
+        el.innerHTML = list.map(m => {
+          const date = new Date(m.created_at).toLocaleString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+          return `<div class="advert-item" style="${m.is_read ? "opacity:.6;" : ""}">
+            <div class="advert-item-header">
+              <div>
+                <div class="advert-item-title">${m.name} ${m.is_read ? "" : '<span style="color:var(--hot-berry);font-size:.7rem;">● NEW</span>'}</div>
+                <div class="advert-item-body"><a href="mailto:${m.email}" style="color:var(--blue-bell);">${m.email}</a></div>
+              </div>
+              <span style="color:var(--muted);font-size:.8rem;">${date}</span>
+            </div>
+            <div class="advert-item-body" style="margin-top:8px;">${m.message}</div>
+            ${!m.is_read ? `<div class="advert-item-actions"><button class="admin-action-btn admin-approve-btn" data-msg-id="${m.id}">Mark as read ✓</button></div>` : ""}
+          </div>`;
+        }).join("");
+
+        document.querySelectorAll("[data-msg-id]").forEach(btn => {
+          btn.addEventListener("click", async () => {
+            const token = window.authApi.getToken();
+            const { error } = await window.supabaseClient.rpc("mark_contact_read", { p_token: token, p_submission_id: btn.dataset.msgId });
+            if (!error) loadMessages();
+          });
+        });
+      }
+
+      // Load message count on page load
+      loadMessages();
 
       document.getElementById("user-search").addEventListener("input", (e) => {
         const q = e.target.value.toLowerCase().trim();
