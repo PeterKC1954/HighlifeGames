@@ -219,6 +219,44 @@ if (signupForm && signupMessage) {
 
 // ===== CONTACT FORM =====
 const contactForm = document.querySelector(".contact-form");
+
+// ===== WAITING LIST =====
+const waitingListForm = document.getElementById("waiting-list-form");
+const waitingListMsg = document.getElementById("waiting-list-message");
+if (waitingListForm && waitingListMsg) {
+  waitingListForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const email = (new FormData(waitingListForm).get("wlEmail") || "").trim();
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      waitingListMsg.className = "form-message error";
+      waitingListMsg.textContent = "Please enter a valid email address.";
+      return;
+    }
+
+    const btn = waitingListForm.querySelector("button[type='submit']");
+    const originalText = btn.innerHTML;
+    btn.innerHTML = "Joining…";
+    btn.disabled = true;
+
+    try {
+      const { data: result, error } = await window.supabaseClient.rpc("join_waiting_list", { p_email: email });
+      if (error || (result && result.error)) {
+        waitingListMsg.className = "form-message error";
+        waitingListMsg.textContent = result?.error || error?.message || "Something went wrong.";
+      } else {
+        waitingListMsg.className = "form-message success";
+        waitingListMsg.textContent = "You're on the list! We'll email you the moment we launch. 🎉";
+        waitingListForm.reset();
+      }
+    } catch (err) {
+      waitingListMsg.className = "form-message error";
+      waitingListMsg.textContent = err.message || "Something went wrong.";
+    } finally {
+      btn.innerHTML = originalText;
+      btn.disabled = false;
+    }
+  });
+}
 if (contactForm) {
   contactForm.addEventListener("submit", async (e) => {
     e.preventDefault();

@@ -21,6 +21,7 @@
         <a href="#" id="tab-overview">Overview</a>
         <a href="#" id="tab-users">Users</a>
         <a href="#" id="tab-messages">Messages <span id="msg-badge" style="background:var(--hot-berry);color:#fff;border-radius:99px;font-size:.65rem;padding:2px 6px;margin-left:4px;display:none;"></span></a>
+        <a href="#" id="tab-waiting">Waiting List</a>
         <button class="nav-login" id="logout-btn">Logout 🔑</button>
       </nav>
     </header>
@@ -107,6 +108,25 @@
           <p class="lobby-subtitle">Submissions from the website contact form.</p>
         </div>
         <div id="messages-list"></div>
+      </section>
+
+      <section class="admin-section" id="section-waiting" style="display:none;">
+        <div class="admin-header">
+          <h1 class="lobby-title">Waiting List</h1>
+          <p class="lobby-subtitle">People signed up for launch notifications — <b id="waiting-count">0</b> on the list.</p>
+        </div>
+        <div class="admin-table-wrap">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Email</th>
+                <th>Joined</th>
+              </tr>
+            </thead>
+            <tbody id="waiting-tbody"></tbody>
+          </table>
+        </div>
       </section>
     </main>
 
@@ -272,19 +292,30 @@
         document.getElementById("section-overview").style.display = "block";
         document.getElementById("section-users").style.display = "none";
         document.getElementById("section-messages").style.display = "none";
+        document.getElementById("section-waiting").style.display = "none";
       });
       document.getElementById("tab-users").addEventListener("click", (e) => {
         e.preventDefault();
         document.getElementById("section-overview").style.display = "none";
         document.getElementById("section-users").style.display = "block";
         document.getElementById("section-messages").style.display = "none";
+        document.getElementById("section-waiting").style.display = "none";
       });
       document.getElementById("tab-messages").addEventListener("click", (e) => {
         e.preventDefault();
         document.getElementById("section-overview").style.display = "none";
         document.getElementById("section-users").style.display = "none";
         document.getElementById("section-messages").style.display = "block";
+        document.getElementById("section-waiting").style.display = "none";
         loadMessages();
+      });
+      document.getElementById("tab-waiting").addEventListener("click", (e) => {
+        e.preventDefault();
+        document.getElementById("section-overview").style.display = "none";
+        document.getElementById("section-users").style.display = "none";
+        document.getElementById("section-messages").style.display = "none";
+        document.getElementById("section-waiting").style.display = "block";
+        loadWaitingList();
       });
 
       async function loadMessages() {
@@ -330,6 +361,31 @@
 
       // Load message count on page load
       loadMessages();
+
+      async function loadWaitingList() {
+        const token = window.authApi.getToken();
+        const { data: list, error } = await window.supabaseClient.rpc("get_waiting_list", { p_token: token });
+        const tbody = document.getElementById("waiting-tbody");
+        const countEl = document.getElementById("waiting-count");
+        if (error || (list && list.error)) {
+          tbody.innerHTML = '<tr><td colspan="3" class="admin-empty">Failed to load.</td></tr>';
+          return;
+        }
+        const entries = Array.isArray(list) ? list : [];
+        countEl.textContent = entries.length;
+        if (!entries.length) {
+          tbody.innerHTML = '<tr><td colspan="3" class="admin-empty">No one on the list yet.</td></tr>';
+          return;
+        }
+        tbody.innerHTML = entries.map((w, i) => {
+          const date = new Date(w.created_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+          return `<tr>
+            <td>${i + 1}</td>
+            <td>${w.email}</td>
+            <td>${date}</td>
+          </tr>`;
+        }).join("");
+      }
 
       document.getElementById("user-search").addEventListener("input", (e) => {
         const q = e.target.value.toLowerCase().trim();
