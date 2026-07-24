@@ -375,7 +375,7 @@ section { padding: 120px clamp(20px, 5vw, 64px); }
   .site-menu a { border-top: 1px solid rgba(255,255,255,.06); padding: 14px 0; }
   .site-menu a:first-child { border-top: 0; }
   .nav-signup { margin-top: 10px; align-self: flex-start; }
-  .hero { padding: 20px 20px 40px; background-attachment: scroll; }
+  .hero { padding: 80px 20px 40px; background-attachment: scroll; min-height: 90vh; align-items: center; }
   .hero-copy { font-size: 1.3rem; }
   .hero-tag { font-size: .8rem; letter-spacing: .1em; margin-bottom: 32px; }
   .hero-stat { flex: 1 1 calc(50% - 8px); min-width: 0; }
@@ -384,7 +384,7 @@ section { padding: 120px clamp(20px, 5vw, 64px); }
   .launch h2 { font-size: clamp(2.2rem, 9vw, 3rem); }
   .launch-copy { font-size: 1.1rem; }
   section { padding: 80px 20px; }
-  .hero-logo { max-width: 100%; }
+  .hero-logo { max-width: 85%; }
   .form-row { flex-direction: column; }
   .account-type-row { flex-direction: column; gap: 8px; }
   .contact-form .section-cta { align-self: stretch; }
