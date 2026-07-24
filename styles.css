@@ -367,3 +367,16 @@ section { padding: 100px clamp(20px, 5vw, 64px); }
   .cookie-inner { flex-direction: column; text-align: center; gap: 14px; }
   .cookie-actions { justify-content: center; }
 }
+
+.loading-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 60vh; gap: 16px; }
+.loading-screen p { color: var(--muted); font-size: .95rem; }
+.loading-spinner { width: 40px; height: 40px; border: 3px solid rgba(255,255,255,.1); border-top-color: var(--yellow-green); border-radius: 50%; animation: spin 0.8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.advert-item { background: var(--dark-3); border: 1px solid rgba(255,255,255,.06); border-radius: 12px; padding: 16px; margin-bottom: 12px; }
+.advert-item-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 8px; }
+.advert-item-title { color: var(--white); font-weight: 700; font-size: .95rem; }
+.advert-item-body { color: var(--muted); font-size: .85rem; line-height: 1.5; }
+.advert-item-actions { display: flex; gap: 8px; margin-top: 10px; }
+.advert-delete-btn { background: transparent; border: 1px solid rgba(255,107,107,.3); color: var(--hot-berry); border-radius: 6px; cursor: pointer; font-family: "Sora", sans-serif; font-size: .75rem; font-weight: 700; padding: 6px 14px; transition: all .2s; }
+.advert-delete-btn:hover { background: rgba(255,107,107,.1); }

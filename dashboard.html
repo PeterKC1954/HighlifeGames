@@ -13,6 +13,10 @@
   <body>
     <header class="site-nav">
       <a class="header-title" href="index.html">Highlife Games</a>
+      <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="site-menu">
+        <span>Menu</span>
+        <i aria-hidden="true"></i>
+      </button>
       <nav class="site-menu" id="site-menu" aria-label="Primary navigation">
         <a href="#" id="tab-overview">Overview</a>
         <a href="#" id="tab-users">Users</a>
@@ -21,7 +25,11 @@
     </header>
 
     <main class="admin-panel">
-      <section class="admin-section" id="section-overview">
+      <div id="loading-screen" class="loading-screen">
+        <div class="loading-spinner"></div>
+        <p>Loading admin panel…</p>
+      </div>
+      <section class="admin-section" id="section-overview" style="display:none;">
         <div class="admin-header">
           <img class="lobby-logo" src="assets/high-life-logo.png" alt="Highlife Games" />
           <h1 class="lobby-title">Admin Panel</h1>
@@ -100,6 +108,23 @@
       const AVATAR_MAP = { dice: "🎲", trophy: "🏆", gift: "🎁", brain: "🧠", shield: "🛡️", star: "⭐" };
       let allUsers = [];
 
+      // Mobile nav toggle
+      const menuToggle = document.querySelector(".menu-toggle");
+      const siteMenu = document.querySelector(".site-menu");
+      if (menuToggle && siteMenu) {
+        menuToggle.addEventListener("click", () => {
+          const isOpen = menuToggle.getAttribute("aria-expanded") === "true";
+          menuToggle.setAttribute("aria-expanded", String(!isOpen));
+          siteMenu.classList.toggle("is-open", !isOpen);
+        });
+        siteMenu.querySelectorAll("a, button").forEach((el) => {
+          el.addEventListener("click", () => {
+            menuToggle.setAttribute("aria-expanded", "false");
+            siteMenu.classList.remove("is-open");
+          });
+        });
+      }
+
       (async () => {
         const token = window.authApi.getToken();
         if (!token) { window.location.href = "index.html"; return; }
@@ -123,6 +148,8 @@
         allUsers = Array.isArray(users) ? users : [];
         renderStats();
         renderUsers(allUsers);
+        document.getElementById("loading-screen").style.display = "none";
+        document.getElementById("section-overview").style.display = "block";
       })();
 
       function renderStats() {
@@ -208,7 +235,7 @@
         const token = window.authApi.getToken();
         const { data: result, error } = await window.supabaseClient.rpc("admin_confirm_account", { p_token: token, p_user_id: userId });
         if (error || (result && result.error)) {
-          alert("Failed to confirm: " + (error?.message || result?.error || "Unknown error"));
+          window.showToast("Failed to confirm: " + (error?.message || result?.error || "Unknown error"), "error");
           return;
         }
         const user = allUsers.find(u => u.id === userId);
@@ -221,7 +248,7 @@
         const token = window.authApi.getToken();
         const { data: result, error } = await window.supabaseClient.rpc("admin_update_approval", { p_token: token, p_user_id: userId, p_approved: approve });
         if (error || (result && result.error)) {
-          alert("Failed to update approval: " + (error?.message || result?.error || "Unknown error"));
+          window.showToast("Failed to update approval: " + (error?.message || result?.error || "Unknown error"), "error");
           return;
         }
         // Update local data

@@ -66,12 +66,7 @@ setSignupMode("player");
   const hash = window.location.hash.toLowerCase();
 
   if (sessionExpired) {
-    const banner = document.createElement("div");
-    banner.style.cssText = "position:fixed;top:0;left:0;right:0;z-index:9999;background:#fc6b6b;color:#fff;text-align:center;padding:12px 20px;font-family:Sora,sans-serif;font-size:.9rem;font-weight:600;";
-    banner.textContent = "Your session has expired. Please log in again.";
-    document.body.prepend(banner);
-    setTimeout(() => banner.style.display = "none", 5000);
-    // Clean URL
+    setTimeout(() => window.showToast("Your session has expired. Please log in again.", "error"), 500);
     window.history.replaceState({}, "", window.location.pathname);
   }
 
@@ -184,9 +179,10 @@ if (signupForm && signupMessage) {
           const { data: urlData } = window.supabaseClient.storage
             .from('advertiser-docs')
             .getPublicUrl(fileName);
-          await window.supabaseClient.from("profiles")
-            .update({ proof_of_address_url: urlData.publicUrl })
-            .eq("id", result.user_id);
+          await window.supabaseClient.rpc("set_proof_of_address", {
+            p_user_id: result.user_id,
+            p_url: urlData.publicUrl,
+          });
         }
       }
 

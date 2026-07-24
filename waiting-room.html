@@ -13,6 +13,10 @@
   <body>
     <header class="site-nav">
       <a class="header-title" href="index.html">Highlife Games</a>
+      <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="site-menu">
+        <span>Menu</span>
+        <i aria-hidden="true"></i>
+      </button>
       <nav class="site-menu" id="site-menu" aria-label="Primary navigation">
         <a href="index.html#how">How to Play</a>
         <a href="index.html#advertisers">Advertisers</a>
@@ -22,6 +26,11 @@
     </header>
 
     <main class="lobby">
+      <div id="loading-screen" class="loading-screen">
+        <div class="loading-spinner"></div>
+        <p>Loading waiting room…</p>
+      </div>
+      <div id="lobby-content" style="display:none;">
       <div class="lobby-header">
         <img class="lobby-logo" src="assets/high-life-logo.png" alt="Highlife Games" />
         <h1 class="lobby-title">Waiting Room</h1>
@@ -92,6 +101,7 @@
       <div class="lobby-footer">
         <a class="dashboard-link" href="index.html">← Back to home</a>
       </div>
+      </div>
     </main>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -99,6 +109,23 @@
     <script src="auth.js"></script>
     <script>
       const AVATAR_MAP = { dice: "🎲", trophy: "🏆", gift: "🎁", brain: "🧠", shield: "🛡️", star: "⭐" };
+
+      // Mobile nav toggle
+      const menuToggle = document.querySelector(".menu-toggle");
+      const siteMenu = document.querySelector(".site-menu");
+      if (menuToggle && siteMenu) {
+        menuToggle.addEventListener("click", () => {
+          const isOpen = menuToggle.getAttribute("aria-expanded") === "true";
+          menuToggle.setAttribute("aria-expanded", String(!isOpen));
+          siteMenu.classList.toggle("is-open", !isOpen);
+        });
+        siteMenu.querySelectorAll("a, button").forEach((el) => {
+          el.addEventListener("click", () => {
+            menuToggle.setAttribute("aria-expanded", "false");
+            siteMenu.classList.remove("is-open");
+          });
+        });
+      }
 
       (async () => {
         const token = window.authApi.getToken();
@@ -166,6 +193,9 @@
             `<div class="lobby-player-chip"><span>${AVATAR_MAP[p.avatar] || "🎲"}</span> ${p.display_name}</div>`
           ).join("");
         }
+
+        document.getElementById("loading-screen").style.display = "none";
+        document.getElementById("lobby-content").style.display = "block";
       })();
 
       document.getElementById("logout-btn").addEventListener("click", async () => {

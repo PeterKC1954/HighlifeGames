@@ -13,12 +13,21 @@
   <body>
     <header class="site-nav">
       <a class="header-title" href="index.html">Highlife Games</a>
-      <nav class="site-menu" aria-label="Primary navigation">
+      <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="site-menu">
+        <span>Menu</span>
+        <i aria-hidden="true"></i>
+      </button>
+      <nav class="site-menu" id="site-menu" aria-label="Primary navigation">
         <button class="nav-login" id="logout-btn">Logout 🔑</button>
       </nav>
     </header>
 
     <main class="admin-panel">
+      <div id="loading-screen" class="loading-screen">
+        <div class="loading-spinner"></div>
+        <p>Loading advertiser dashboard…</p>
+      </div>
+      <div id="advertiser-content" style="display:none;">
       <div class="admin-header">
         <img class="lobby-logo" src="assets/high-life-logo.png" alt="Highlife Games" />
         <h1 class="lobby-title">Advertiser Dashboard</h1>
@@ -103,7 +112,8 @@
           </form>
         </div>
       </div>
-    </div>
+      </div>
+    </main>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-client.js"></script>
@@ -112,6 +122,23 @@
       let currentUser = null;
       let myClaims = [];
       let myAdverts = [];
+
+      // Mobile nav toggle
+      const menuToggle = document.querySelector(".menu-toggle");
+      const siteMenu = document.querySelector(".site-menu");
+      if (menuToggle && siteMenu) {
+        menuToggle.addEventListener("click", () => {
+          const isOpen = menuToggle.getAttribute("aria-expanded") === "true";
+          menuToggle.setAttribute("aria-expanded", String(!isOpen));
+          siteMenu.classList.toggle("is-open", !isOpen);
+        });
+        siteMenu.querySelectorAll("a, button").forEach((el) => {
+          el.addEventListener("click", () => {
+            menuToggle.setAttribute("aria-expanded", "false");
+            siteMenu.classList.remove("is-open");
+          });
+        });
+      }
 
       (async () => {
         const token = window.authApi.getToken();
@@ -159,6 +186,8 @@
 
         await loadClaims();
         await loadAdverts();
+        document.getElementById("loading-screen").style.display = "none";
+        document.getElementById("advertiser-content").style.display = "block";
       })();
 
       async function loadClaims() {
@@ -208,17 +237,37 @@
         el.innerHTML = myAdverts.map(a => {
           const claim = myClaims.find(c => c.id === a.claim_id);
           const area = claim ? claim.postcode.toUpperCase() : "—";
-          return `<div class="claim-item">
-            <div class="claim-item-info">
-              <span class="claim-postcode">${a.title}</span>
-              <span class="${a.is_active ? "badge-confirmed" : "badge-pending"}">${a.is_active ? "✅ Live" : "⏳ Pending"}</span>
-            </div>
-            <div class="claim-item-meta">
+          return `<div class="advert-item">
+            <div class="advert-item-header">
+              <div>
+                <div class="advert-item-title">${a.title}</div>
+                <span class="${a.is_active ? "badge-confirmed" : "badge-pending"}">${a.is_active ? "✅ Live" : "⏳ Pending"}</span>
+              </div>
               <span>📍 ${area}</span>
-              ${a.body ? `<span>·</span><span>${a.body}</span>` : ""}
+            </div>
+            ${a.body ? `<div class="advert-item-body">${a.body}</div>` : ""}
+            <div class="advert-item-actions">
+              <button class="advert-delete-btn" data-advert-id="${a.id}">Delete 🗑️</button>
             </div>
           </div>`;
         }).join("");
+
+        document.querySelectorAll(".advert-delete-btn").forEach(btn => {
+          btn.addEventListener("click", () => deleteAdvert(btn.dataset.advertId));
+        });
+      }
+
+      async function deleteAdvert(advertId) {
+        if (!confirm("Delete this advert? This cannot be undone.")) return;
+        const token = window.authApi.getToken();
+        const { data: result, error } = await window.supabaseClient.rpc("delete_advert", {
+          p_token: token, p_advert_id: advertId,
+        });
+        if (error || (result && result.error)) {
+          window.showToast("Failed to delete: " + (result?.error || error?.message || "Unknown error"), "error");
+          return;
+        }
+        await loadAdverts();
       }
 
       // ===== POSTCODE CHECK & CLAIM =====
@@ -285,7 +334,7 @@
       window.openAdvertModal = (claimId, area) => {
         const claim = myClaims.find(c => c.id === claimId);
         if (claim && claim.changes_remaining <= 0) {
-          alert("You've used all 3 advert changes this month for this area.");
+          window.showToast("You've used all 3 advert changes this month for this area.", "error");
           return;
         }
         document.getElementById("advert-claim-id").value = claimId;

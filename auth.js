@@ -93,3 +93,17 @@ const authApi = {
 };
 
 window.authApi = authApi;
+
+window.showToast = function(message, type = "info") {
+  const existing = document.getElementById("hl-toast");
+  if (existing) existing.remove();
+
+  const toast = document.createElement("div");
+  toast.id = "hl-toast";
+  const bg = type === "error" ? "#fc6b6b" : type === "success" ? "#abd40a" : "#1e3344";
+  const color = type === "success" ? "#0f1923" : "#fff";
+  toast.style.cssText = `position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:99999;background:${bg};color:${color};padding:14px 24px;border-radius:12px;font-family:Sora,sans-serif;font-size:.9rem;font-weight:600;box-shadow:0 8px 32px rgba(0,0,0,.4);max-width:90vw;text-align:center;transition:opacity .3s;`;
+  toast.textContent = message;
+  document.body.appendChild(toast);
+  setTimeout(() => { toast.style.opacity = "0"; setTimeout(() => toast.remove(), 300); }, 4000);
+};
