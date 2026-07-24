@@ -36,7 +36,8 @@ a { color: inherit; text-decoration: none; }
 .eyebrow { color: var(--yellow-green); font-size: .85rem; font-weight: 700; letter-spacing: .2em; margin: 0 0 12px; text-transform: uppercase; }
 .brand-lockup { margin: 0 0 24px; }
 .hero-logo { display: block; height: auto; margin: 0 auto; max-width: 1300px; width: 100%; filter: drop-shadow(0 8px 32px rgba(0,0,0,.5)); }
-.hero-copy { color: var(--white); font-size: 1.6rem; font-weight: 600; line-height: 1.35; margin: 0 0 40px; }
+.hero-copy { color: var(--white); font-size: 1.6rem; font-weight: 600; line-height: 1.35; margin: 0 0 12px; }
+.hero-tag { color: var(--muted); font-size: .9rem; font-weight: 600; letter-spacing: .15em; margin: 0 0 40px; text-transform: uppercase; }
 .hero-cta-row { display: flex; flex-wrap: wrap; gap: 16px; justify-content: center; margin-bottom: 16px; }
 .cta-secondary { background: transparent; border: 2px solid rgba(255,255,255,.2); }
 .cta-secondary:hover { background: var(--white); color: var(--dark); border-color: var(--white); box-shadow: 0 8px 24px rgba(255,255,255,.15); }
