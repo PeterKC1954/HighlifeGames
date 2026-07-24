@@ -76,6 +76,7 @@
           <table class="admin-table">
             <thead>
               <tr>
+                <th>Avatar</th>
                 <th>Name</th>
                 <th>Email</th>
                 <th>Type</th>
@@ -140,7 +141,7 @@
       function renderUsers(users) {
         const tbody = document.getElementById("users-tbody");
         if (!users.length) {
-          tbody.innerHTML = '<tr><td colspan="8" class="admin-empty">No users found.</td></tr>';
+          tbody.innerHTML = '<tr><td colspan="9" class="admin-empty">No users found.</td></tr>';
           return;
         }
         tbody.innerHTML = users.map(u => {
@@ -152,29 +153,33 @@
             ? (u.is_approved
               ? '<span class="badge-confirmed">✅ Approved</span>'
               : '<span class="badge-pending">⏳ Pending</span>')
-            : '<span class="badge-confirmed">—</span>';
+            : '';
           const date = new Date(u.created_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
-          const avatar = AVATAR_MAP[u.avatar] || "—";
-          const hecus = u.hecu_balance != null ? u.hecu_balance.toLocaleString() : "—";
+          const avatar = AVATAR_MAP[u.avatar] || "";
+          const hecus = u.hecu_balance != null ? u.hecu_balance.toLocaleString() : "";
 
           let actions = "";
+          if (!u.is_confirmed) {
+            actions += `<button class="admin-action-btn admin-confirm-btn" data-user-id="${u.id}">Confirm</button>`;
+          }
           if (u.account_type === "advertiser" && !u.is_approved) {
-            actions = `<button class="admin-action-btn admin-approve-btn" data-user-id="${u.id}">Approve</button>`;
+            actions += `<button class="admin-action-btn admin-approve-btn" data-user-id="${u.id}">Approve</button>`;
           } else if (u.account_type === "advertiser" && u.is_approved) {
-            actions = `<button class="admin-action-btn admin-revoke-btn" data-user-id="${u.id}">Revoke</button>`;
+            actions += `<button class="admin-action-btn admin-revoke-btn" data-user-id="${u.id}">Revoke</button>`;
           }
 
-          let nameCell = `${avatar} ${u.display_name || "—"}`;
+          let nameCell = u.display_name || "";
           if (u.account_type === "advertiser" && u.company_name) {
             nameCell += `<br><span class="admin-sub-text">${u.company_name}</span>`;
           }
 
-          let emailCell = u.email || "—";
+          let emailCell = u.email || "";
           if (u.account_type === "advertiser" && u.proof_of_address_url) {
             emailCell += `<br><a href="${u.proof_of_address_url}" target="_blank" class="admin-proof-link">View proof of address</a>`;
           }
 
           return `<tr>
+            <td>${avatar}</td>
             <td>${nameCell}</td>
             <td>${emailCell}</td>
             <td><span class="admin-badge ${typeClass}">${u.account_type}</span></td>
@@ -186,6 +191,10 @@
           </tr>`;
         }).join("");
 
+        // Bind confirm buttons
+        document.querySelectorAll(".admin-confirm-btn").forEach(btn => {
+          btn.addEventListener("click", () => confirmAccount(btn.dataset.userId));
+        });
         // Bind approve/revoke buttons
         document.querySelectorAll(".admin-approve-btn").forEach(btn => {
           btn.addEventListener("click", () => toggleApproval(btn.dataset.userId, true));
@@ -193,6 +202,19 @@
         document.querySelectorAll(".admin-revoke-btn").forEach(btn => {
           btn.addEventListener("click", () => toggleApproval(btn.dataset.userId, false));
         });
+      }
+
+      async function confirmAccount(userId) {
+        const token = window.authApi.getToken();
+        const { data: result, error } = await window.supabaseClient.rpc("admin_confirm_account", { p_token: token, p_user_id: userId });
+        if (error || (result && result.error)) {
+          alert("Failed to confirm: " + (error?.message || result?.error || "Unknown error"));
+          return;
+        }
+        const user = allUsers.find(u => u.id === userId);
+        if (user) user.is_confirmed = true;
+        renderStats();
+        renderUsers(allUsers);
       }
 
       async function toggleApproval(userId, approve) {
