@@ -658,7 +658,7 @@ if (resetConfirmBtn) {
       if (data && data.error) {
         resetMessage.className = "form-message error";
         resetMessage.textContent = data.error;
-        resetConfirmBtn.innerHTML = "Reset password ✅";
+        resetConfirmBtn.innerHTML = "Reset password";
         resetConfirmBtn.disabled = false;
         return;
       }
@@ -670,12 +670,12 @@ if (resetConfirmBtn) {
         resetMessage.textContent = "";
         resetMessage.className = "form-message";
       }, 2000);
-      resetConfirmBtn.innerHTML = "Reset password ✅";
+      resetConfirmBtn.innerHTML = "Reset password";
       resetConfirmBtn.disabled = false;
     } catch (err) {
       resetMessage.className = "form-message error";
       resetMessage.textContent = "Failed to reset password. Please try again.";
-      resetConfirmBtn.innerHTML = "Reset password ✅";
+      resetConfirmBtn.innerHTML = "Reset password";
       resetConfirmBtn.disabled = false;
     }
   });
