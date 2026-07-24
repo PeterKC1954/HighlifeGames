@@ -146,6 +146,7 @@
     <script>
       const AVATAR_MAP = { dice: "🎲", trophy: "🏆", gift: "🎁", brain: "🧠", shield: "🛡️", star: "⭐" };
       let allUsers = [];
+      let currentUserId = null;
 
       // Mobile nav toggle
       const menuToggle = document.querySelector(".menu-toggle");
@@ -176,6 +177,7 @@
         }
 
         document.getElementById("admin-name").textContent = session.display_name;
+        currentUserId = session.id;
 
         const { data: users, error } = await window.supabaseClient.rpc("get_all_profiles", { p_token: token });
 
@@ -245,6 +247,9 @@
           } else if (u.account_type === "advertiser" && u.is_approved) {
             actions += `<button class="admin-action-btn admin-revoke-btn" data-user-id="${u.id}">Revoke</button>`;
           }
+          if (u.id !== currentUserId) {
+            actions += `<button class="admin-action-btn admin-delete-btn" data-user-id="${u.id}">Delete</button>`;
+          }
 
           let nameCell = u.display_name || "";
           if (u.account_type === "advertiser" && u.company_name) {
@@ -280,6 +285,9 @@
         document.querySelectorAll(".admin-revoke-btn").forEach(btn => {
           btn.addEventListener("click", () => toggleApproval(btn.dataset.userId, false));
         });
+        document.querySelectorAll(".admin-delete-btn").forEach(btn => {
+          btn.addEventListener("click", () => deleteUser(btn.dataset.userId));
+        });
       }
 
       async function confirmAccount(userId) {
@@ -307,6 +315,22 @@
         if (user) user.is_approved = approve;
         renderStats();
         renderUsers(allUsers);
+      }
+
+      async function deleteUser(userId) {
+        const user = allUsers.find(u => u.id === userId);
+        const name = user ? (user.display_name || user.email || "this user") : "this user";
+        if (!confirm(`Are you sure you want to delete ${name}? This cannot be undone.`)) return;
+        const token = window.authApi.getToken();
+        const { data: result, error } = await window.supabaseClient.rpc("admin_delete_user", { p_token: token, p_user_id: userId });
+        if (error || (result && result.error)) {
+          window.showToast("Failed to delete user: " + (error?.message || result?.error || "Unknown error"), "error");
+          return;
+        }
+        allUsers = allUsers.filter(u => u.id !== userId);
+        renderStats();
+        renderUsers(allUsers);
+        window.showToast("User deleted.", "success");
       }
 
       document.getElementById("tab-overview").addEventListener("click", (e) => {

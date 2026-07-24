@@ -280,6 +280,8 @@ section { padding: 120px clamp(20px, 5vw, 64px); }
 .admin-approve-btn:hover { background: var(--orange); color: var(--white); }
 .admin-revoke-btn { background: transparent; border: 1px solid rgba(255,107,107,.3); color: var(--hot-berry); }
 .admin-revoke-btn:hover { background: rgba(255,107,107,.1); }
+.admin-delete-btn { background: transparent; border: 1px solid rgba(255,107,107,.4); color: #fc6b6b; }
+.admin-delete-btn:hover { background: rgba(252,107,107,.15); border-color: #fc6b6b; }
 .admin-sub-text { color: var(--muted); font-size: .8rem; }
 .admin-proof-link { color: var(--blue-bell); font-size: .8rem; text-decoration: underline; }
 .admin-proof-link:hover { color: var(--white); }
