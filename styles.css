@@ -30,7 +30,7 @@ a { color: inherit; text-decoration: none; }
 .nav-login:disabled { cursor: default; opacity: .8; }
 .nav-login:disabled:hover { border-color: rgba(255,255,255,.15); background: transparent; }
 
-.hero { background: var(--dark); background-size: cover; background-position: center; background-repeat: no-repeat; background-attachment: fixed; padding: 100px clamp(20px, 5vw, 64px) 120px; text-align: center; position: relative; overflow: hidden; min-height: 100vh; display: flex; align-items: flex-start; justify-content: center; }
+.hero { background: var(--dark); background-size: cover; background-position: center; background-repeat: no-repeat; background-attachment: fixed; padding: 70px clamp(20px, 5vw, 64px) 120px; text-align: center; position: relative; overflow: hidden; min-height: 100vh; display: flex; align-items: flex-start; justify-content: center; }
 .hero::before { background: linear-gradient(180deg, rgba(15,25,35,.7) 0%, rgba(15,25,35,.85) 60%, rgba(15,25,35,.95) 100%); content: ""; inset: 0; position: absolute; z-index: 0; }
 .hero-content { position: relative; z-index: 1; margin: 0 auto; max-width: 1400px; }
 .eyebrow { color: var(--yellow-green); font-size: .85rem; font-weight: 700; letter-spacing: .2em; margin: 0 0 28px; text-transform: uppercase; }
