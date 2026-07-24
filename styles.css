@@ -35,7 +35,8 @@ a { color: inherit; text-decoration: none; }
 .hero-content { position: relative; z-index: 1; margin: 0 auto; max-width: 1400px; }
 .eyebrow { color: var(--yellow-green); font-size: .85rem; font-weight: 700; letter-spacing: .2em; margin: 0 0 12px; text-transform: uppercase; }
 .brand-lockup { margin: 0 0 24px; }
-.hero-logo { display: block; height: auto; margin: 0 auto; max-width: 1300px; width: 100%; filter: drop-shadow(0 8px 32px rgba(0,0,0,.5)); opacity: 0; transform: scale(.92); animation: logoBlurIn 1.1s cubic-bezier(.16,1,.3,1) .2s forwards; }
+.hero-logo { display: block; height: auto; margin: 0 auto; max-width: 1300px; width: 100%; filter: drop-shadow(0 8px 32px rgba(0,0,0,.5)); opacity: 0; transform: scale(.92); animation: logoBlurIn 1.1s cubic-bezier(.16,1,.3,1) .2s forwards; transition: filter .4s ease; }
+.hero-logo.logo-scrolled { filter: drop-shadow(0 8px 32px rgba(51,161,253,.6)) hue-rotate(180deg) saturate(1.3); }
 @keyframes logoBlurIn { 0% { opacity: 0; transform: scale(.92); filter: drop-shadow(0 8px 32px rgba(0,0,0,.5)) blur(24px); } 100% { opacity: 1; transform: scale(1); filter: drop-shadow(0 8px 32px rgba(0,0,0,.5)) blur(0); } }
 .hero-copy { color: var(--white); font-size: 1.6rem; font-weight: 600; line-height: 1.35; margin: 0 0 12px; opacity: 0; transform: translateY(20px); animation: heroFadeUp .7s cubic-bezier(.16,1,.3,1) .9s forwards; }
 .hero-tag { color: var(--muted); font-size: .9rem; font-weight: 600; letter-spacing: .15em; margin: 0 0 40px; text-transform: uppercase; opacity: 0; transform: translateY(20px); animation: heroFadeUp .7s cubic-bezier(.16,1,.3,1) 1.1s forwards; }

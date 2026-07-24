@@ -2,9 +2,16 @@ document.getElementById("year").textContent = new Date().getFullYear();
 
 // ===== NAV SCROLL STATE =====
 const siteNav = document.querySelector(".site-nav");
+const heroLogo = document.querySelector(".hero-logo");
+const heroSection = document.querySelector(".hero");
 window.addEventListener("scroll", () => {
   if (window.scrollY > 40) siteNav.classList.add("scrolled");
   else siteNav.classList.remove("scrolled");
+  if (heroLogo && heroSection) {
+    const heroBottom = heroSection.offsetTop + heroSection.offsetHeight;
+    if (window.scrollY > heroBottom - 200) heroLogo.classList.add("logo-scrolled");
+    else heroLogo.classList.remove("logo-scrolled");
+  }
 });
 
 const menuToggle = document.querySelector(".menu-toggle");
