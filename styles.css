@@ -381,17 +381,51 @@ section { padding: 100px clamp(20px, 5vw, 64px); }
 .advert-delete-btn { background: transparent; border: 1px solid rgba(255,107,107,.3); color: var(--hot-berry); border-radius: 6px; cursor: pointer; font-family: "Sora", sans-serif; font-size: .75rem; font-weight: 700; padding: 6px 14px; transition: all .2s; }
 .advert-delete-btn:hover { background: rgba(255,107,107,.1); }
 
-.waiting-list-section { background: var(--dark-2); border-top: 1px solid rgba(255,255,255,.06); border-bottom: 1px solid rgba(255,255,255,.06); padding: 64px 20px; text-align: center; }
-.waiting-list-inner { max-width: 560px; margin: 0 auto; }
-.waiting-list-section h2 { color: var(--white); font-family: "Bebas Neue", sans-serif; font-size: 2.4rem; letter-spacing: .04em; margin: 8px 0 12px; }
-.waiting-list-copy { color: var(--muted); font-size: 1.05rem; line-height: 1.6; margin: 0 0 24px; }
+/* ===== SCROLL REVEAL ===== */
+.reveal { opacity: 0; transform: translateY(40px); transition: opacity .7s cubic-bezier(.16,1,.3,1), transform .7s cubic-bezier(.16,1,.3,1); }
+.reveal.is-visible { opacity: 1; transform: translateY(0); }
+@media (prefers-reduced-motion: reduce) {
+  .reveal { opacity: 1; transform: none; transition: none; }
+}
+
+/* ===== WAITING LIST BOX (inside launch section) ===== */
+.waiting-list-box { background: linear-gradient(135deg, rgba(171,212,10,.08) 0%, rgba(208,47,124,.08) 100%); border: 1px solid rgba(171,212,10,.2); border-radius: 24px; margin: 48px auto 0; max-width: 560px; padding: 40px 32px; text-align: center; }
+.waiting-list-title { color: var(--yellow-green); font-size: 1.3rem; font-weight: 700; margin: 0 0 8px; }
+.waiting-list-copy { color: var(--muted); font-size: 1rem; line-height: 1.6; margin: 0 0 24px; }
 .waiting-list-form { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
 .waiting-list-form input { background: var(--dark-3); border: 1px solid rgba(255,255,255,.1); border-radius: 10px; color: var(--white); font-family: "Sora", sans-serif; font-size: .95rem; padding: 14px 18px; flex: 1; min-width: 240px; max-width: 360px; transition: border-color .2s; }
 .waiting-list-form input::placeholder { color: var(--muted); }
 .waiting-list-form input:focus { border-color: var(--yellow-green); outline: none; }
 .waiting-list-form .cta { white-space: nowrap; }
+.waiting-list-count { color: var(--muted); font-size: .85rem; margin: 16px 0 0; }
+.waiting-list-count b { color: var(--yellow-green); }
 
 @media (max-width: 480px) {
+  .waiting-list-box { padding: 28px 16px; }
   .waiting-list-form { flex-direction: column; align-items: stretch; }
   .waiting-list-form input { min-width: auto; max-width: none; }
+}
+
+/* ===== FOOTER ===== */
+.site-footer { background: var(--dark-2); border-top: 1px solid rgba(255,255,255,.06); padding: 56px 20px 24px; }
+.footer-inner { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 40px; max-width: 1000px; margin: 0 auto 32px; }
+.footer-brand { display: flex; flex-direction: column; gap: 12px; }
+.footer-logo { max-width: 160px; height: auto; }
+.footer-brand p { color: var(--muted); font-size: .9rem; margin: 0; }
+.footer-links { display: flex; flex-direction: column; gap: 10px; }
+.footer-links h4 { color: var(--white); font-family: "Bebas Neue", sans-serif; font-size: 1.1rem; letter-spacing: .05em; margin: 0 0 4px; text-transform: uppercase; }
+.footer-links a { color: var(--muted); font-size: .9rem; transition: color .2s; }
+.footer-links a:hover { color: var(--yellow-green); }
+.footer-btn { background: none; border: 0; color: var(--muted); cursor: pointer; font-family: "Sora", sans-serif; font-size: .9rem; padding: 0; text-align: left; transition: color .2s; }
+.footer-btn:hover { color: var(--yellow-green); }
+.footer-copy { text-align: center; color: var(--muted); font-size: .8rem; padding-top: 24px; border-top: 1px solid rgba(255,255,255,.04); }
+
+@media (max-width: 768px) {
+  .footer-inner { grid-template-columns: 1fr 1fr; gap: 28px; }
+}
+@media (max-width: 480px) {
+  .footer-inner { grid-template-columns: 1fr; gap: 24px; text-align: center; }
+  .footer-brand { align-items: center; }
+  .footer-links { align-items: center; }
+  .footer-btn { text-align: center; }
 }

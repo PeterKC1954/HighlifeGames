@@ -288,6 +288,42 @@ if (contactForm) {
   });
 }
 
+// ===== SCROLL REVEAL =====
+const revealObserver = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add("is-visible");
+      revealObserver.unobserve(entry.target);
+    }
+  });
+}, { threshold: 0.1, rootMargin: "0px 0px -60px 0px" });
+document.querySelectorAll(".reveal").forEach(el => revealObserver.observe(el));
+
+// ===== WAITING LIST COUNTER =====
+(async function loadWaitingListCount() {
+  const countEl = document.getElementById("waiting-list-count-text");
+  if (!countEl) return;
+  try {
+    const { data } = await window.supabaseClient.rpc("get_waiting_list_count");
+    if (data && data.count != null && data.count > 0) {
+      countEl.innerHTML = `🔥 <b>${data.count}</b> ${data.count === 1 ? "person has" : "people have"} already joined the list`;
+    }
+  } catch (e) { /* silent fail */ }
+})();
+
+// ===== FOOTER BUTTONS =====
+const footerSignup = document.getElementById("footer-signup");
+const footerLogin = document.getElementById("footer-login");
+if (footerSignup) footerSignup.addEventListener("click", () => openModal("player"));
+if (footerLogin) footerLogin.addEventListener("click", () => {
+  const loginModal = document.getElementById("login-modal");
+  if (loginModal) {
+    loginModal.classList.add("is-open");
+    loginModal.setAttribute("aria-hidden", "false");
+    document.body.style.overflow = "hidden";
+  }
+});
+
 const cookieBanner = document.getElementById("cookie-banner");
 const cookieAccept = document.getElementById("cookie-accept");
 const cookieEssential = document.getElementById("cookie-essential");

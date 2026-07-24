@@ -6,10 +6,24 @@
     <meta name="theme-color" content="#0f1923" />
     <meta name="description" content="Highlife Games — an online interactive educational quiz game with real prizes. Answer sponsored questions, build your agency, and climb to Account Director. For ages 14+." />
     <title>Highlife Games — Coming Soon</title>
+
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Highlife Games — Think fast. Play smart. Win for real." />
+    <meta property="og:description" content="An interactive quiz game with real prizes. Build your agency, collect assets, and race to Account Director. Ages 14+." />
+    <meta property="og:image" content="assets/high-life-logo.png" />
+    <meta property="og:url" content="https://highlifegames.co.uk" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Highlife Games — Think fast. Play smart. Win for real." />
+    <meta name="twitter:description" content="An interactive quiz game with real prizes. Ages 14+." />
+    <meta name="twitter:image" content="assets/high-life-logo.png" />
+
+    <link rel="icon" type="image/png" href="assets/high-life-logo.png" />
+    <link rel="apple-touch-icon" href="assets/high-life-logo.png" />
+
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Sora:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="styles.css?v=3" />
   </head>
   <body>
     <main>
@@ -50,20 +64,7 @@
         </div>
       </section>
 
-      <section class="waiting-list-section" id="waiting-list">
-        <div class="waiting-list-inner">
-          <p class="eyebrow">🔔 Be first in line</p>
-          <h2>Join the waiting list</h2>
-          <p class="waiting-list-copy">The game launches soon. Drop your email and we'll notify you the moment doors open — <b>first to play, first to win!</b> 🏁</p>
-          <form class="waiting-list-form" id="waiting-list-form" onsubmit="return false;">
-            <input type="email" name="wlEmail" placeholder="Your email address" required />
-            <button type="submit" class="cta">Join the list 🎉</button>
-          </form>
-          <p class="form-message" id="waiting-list-message" role="status" aria-live="polite"></p>
-        </div>
-      </section>
-
-      <section class="launch" id="launch" aria-labelledby="launch-title">
+      <section class="launch reveal" id="launch" aria-labelledby="launch-title">
         <div class="launch-intro">
           <p class="eyebrow">⚡ Coming soon</p>
           <h2 id="launch-title">Ready to play?</h2>
@@ -76,10 +77,20 @@
           <div class="highlight"><span class="highlight-icon" aria-hidden="true">🎁</span><span>Play with mates</span></div>
           <div class="highlight"><span class="highlight-icon" aria-hidden="true">💰</span><span>Earn real rewards</span></div>
         </div>
-        <button class="launch-button" id="launch-signup">Get early access 🎉</button>
+
+        <div class="waiting-list-box">
+          <p class="waiting-list-title">🔔 Be first in line</p>
+          <p class="waiting-list-copy">Drop your email and we'll notify you the moment doors open — <b>first to play, first to win!</b> 🏁</p>
+          <form class="waiting-list-form" id="waiting-list-form" onsubmit="return false;">
+            <input type="email" name="wlEmail" placeholder="Your email address" required />
+            <button type="submit" class="cta">Join the list 🎉</button>
+          </form>
+          <p class="form-message" id="waiting-list-message" role="status" aria-live="polite"></p>
+          <p class="waiting-list-count" id="waiting-list-count-text"></p>
+        </div>
       </section>
 
-      <section class="how-to-play" id="how" aria-labelledby="how-title">
+      <section class="how-to-play reveal" id="how" aria-labelledby="how-title">
         <div class="section-inner">
           <p class="eyebrow">🎯 It's easy to start</p>
           <h2 id="how-title">How to play</h2>
@@ -108,7 +119,7 @@
         </div>
       </section>
 
-      <section class="advertisers" id="advertisers" aria-labelledby="advertisers-title">
+      <section class="advertisers reveal" id="advertisers" aria-labelledby="advertisers-title">
         <div class="section-inner">
           <p class="eyebrow eyebrow-light">📣 Brands love us</p>
           <h2 id="advertisers-title">Get your brand in the game</h2>
@@ -139,7 +150,7 @@
         </div>
       </section>
 
-      <section class="faqs" id="faqs" aria-labelledby="faqs-title">
+      <section class="faqs reveal" id="faqs" aria-labelledby="faqs-title">
         <div class="section-inner">
           <p class="eyebrow">🤔 Questions? We've got you</p>
           <h2 id="faqs-title">FAQs</h2>
@@ -172,7 +183,7 @@
         </div>
       </section>
 
-      <section class="contact" id="contact" aria-labelledby="contact-title">
+      <section class="contact reveal" id="contact" aria-labelledby="contact-title">
         <div class="section-inner">
           <p class="eyebrow eyebrow-light">💬 Say hello</p>
           <h2 id="contact-title">Drop us a line</h2>
@@ -189,8 +200,34 @@
       </section>
     </main>
     <footer class="site-footer">
-      <p>© <span id="year"></span> Highlife Games. All rights reserved.</p>
-      <p><a href="#top">Home</a> · <a href="#how">How to Play</a> · <a href="#advertisers">Advertisers</a> · <a href="#faqs">FAQs</a> · <a href="#contact">Contact Us</a></p>
+      <div class="footer-inner">
+        <div class="footer-brand">
+          <img src="assets/high-life-logo.png" alt="Highlife Games" class="footer-logo" />
+          <p>Think fast. Play smart. Win for real.</p>
+        </div>
+        <div class="footer-links">
+          <h4>Explore</h4>
+          <a href="#top">Home</a>
+          <a href="#how">How to Play</a>
+          <a href="#advertisers">Advertisers</a>
+          <a href="#faqs">FAQs</a>
+          <a href="#contact">Contact Us</a>
+        </div>
+        <div class="footer-links">
+          <h4>Get started</h4>
+          <a href="#launch">Join waiting list</a>
+          <button class="footer-btn" id="footer-signup">Sign up free 🎮</button>
+          <button class="footer-btn" id="footer-login">Login 🔑</button>
+        </div>
+        <div class="footer-links">
+          <h4>Follow us</h4>
+          <a href="https://x.com/highlifegames" target="_blank" rel="noopener">𝕏 Twitter</a>
+          <a href="https://instagram.com/highlifegames" target="_blank" rel="noopener">📸 Instagram</a>
+          <a href="https://facebook.com/highlifegames" target="_blank" rel="noopener">👍 Facebook</a>
+          <a href="https://youtube.com/@highlifegames" target="_blank" rel="noopener">▶️ YouTube</a>
+        </div>
+      </div>
+      <p class="footer-copy">© <span id="year"></span> Highlife Games. All rights reserved.</p>
     </footer>
     <div class="cookie-banner" id="cookie-banner" role="dialog" aria-label="Cookie consent">
       <div class="cookie-inner">
