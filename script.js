@@ -594,6 +594,99 @@ if (loginForm && loginMessage) {
   });
 }
 
+// ===== FORGOT PASSWORD =====
+const forgotBtn = document.getElementById("forgot-password-btn");
+const forgotStep = document.getElementById("forgot-step");
+const forgotForm = document.getElementById("forgot-form");
+const forgotMessage = document.getElementById("forgot-message");
+const forgotResetStep = document.getElementById("forgot-reset-step");
+const resetConfirmBtn = document.getElementById("reset-confirm-btn");
+const resetMessage = document.getElementById("reset-message");
+let forgotEmail = "";
+
+if (forgotBtn) {
+  forgotBtn.addEventListener("click", () => {
+    if (forgotStep) {
+      forgotStep.style.display = forgotStep.style.display === "none" ? "block" : "none";
+      if (forgotResetStep) forgotResetStep.style.display = "none";
+      if (forgotMessage) { forgotMessage.className = "form-message"; forgotMessage.textContent = ""; }
+    }
+  });
+}
+
+if (forgotForm) {
+  forgotForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const email = (document.getElementById("forgot-email").value || "").trim();
+    if (!email) { if (forgotMessage) { forgotMessage.className = "form-message error"; forgotMessage.textContent = "Please enter your email."; } return; }
+
+    const btn = document.getElementById("forgot-send-btn");
+    const originalText = btn.innerHTML;
+    btn.innerHTML = "Sending…";
+    btn.disabled = true;
+    forgotEmail = email;
+
+    try {
+      const { data } = await window.supabaseClient.rpc("request_password_reset", { p_email: email });
+      if (data && data.error) {
+        forgotMessage.className = "form-message error";
+        forgotMessage.textContent = data.error;
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+        return;
+      }
+      forgotMessage.className = "form-message success";
+      forgotMessage.textContent = "Reset code sent! Check your email. 📧";
+      if (forgotResetStep) forgotResetStep.style.display = "block";
+      btn.innerHTML = originalText;
+      btn.disabled = false;
+    } catch (err) {
+      forgotMessage.className = "form-message error";
+      forgotMessage.textContent = "Failed to send reset code. Please try again.";
+      btn.innerHTML = originalText;
+      btn.disabled = false;
+    }
+  });
+}
+
+if (resetConfirmBtn) {
+  resetConfirmBtn.addEventListener("click", async () => {
+    const code = (document.getElementById("reset-code-input").value || "").trim();
+    const newPassword = (document.getElementById("reset-password-input").value || "").trim();
+    if (!code || !newPassword) { resetMessage.className = "form-message error"; resetMessage.textContent = "Please enter the code and your new password."; return; }
+    if (newPassword.length < 6) { resetMessage.className = "form-message error"; resetMessage.textContent = "Password must be at least 6 characters."; return; }
+
+    resetConfirmBtn.innerHTML = "Resetting…";
+    resetConfirmBtn.disabled = true;
+
+    try {
+      const { data } = await window.supabaseClient.rpc("reset_password", { p_email: forgotEmail, p_code: code, p_new_password: newPassword });
+      if (data && data.error) {
+        resetMessage.className = "form-message error";
+        resetMessage.textContent = data.error;
+        resetConfirmBtn.innerHTML = "Reset password ✅";
+        resetConfirmBtn.disabled = false;
+        return;
+      }
+      resetMessage.className = "form-message success";
+      resetMessage.textContent = "Password reset! You can now log in. 🎉";
+      setTimeout(() => {
+        if (forgotStep) forgotStep.style.display = "none";
+        if (forgotResetStep) forgotResetStep.style.display = "none";
+        resetMessage.textContent = "";
+        resetMessage.className = "form-message";
+      }, 2000);
+      resetConfirmBtn.innerHTML = "Reset password ✅";
+      resetConfirmBtn.disabled = false;
+    } catch (err) {
+      resetMessage.className = "form-message error";
+      resetMessage.textContent = "Failed to reset password. Please try again.";
+      resetConfirmBtn.innerHTML = "Reset password ✅";
+      resetConfirmBtn.disabled = false;
+    }
+  });
+}
+
 // ===== CHECK EXISTING SESSION =====
 (async () => {
   try {

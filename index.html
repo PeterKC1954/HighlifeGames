@@ -23,7 +23,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Sora:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="styles.css?v=3" />
+    <link rel="stylesheet" href="styles.css?v=4" />
   </head>
   <body>
     <canvas id="bg-canvas"></canvas>
@@ -412,7 +412,7 @@
             </div>
             <label class="form-check">
               <input type="checkbox" name="terms" required />
-              <span>I agree to the Terms &amp; Conditions and Privacy Policy</span>
+              <span>I agree to the <a href="terms.html" target="_blank">Terms &amp; Conditions</a> and <a href="privacy.html" target="_blank">Privacy Policy</a></span>
             </label>
             <button type="submit" class="section-cta">Create account 🎉</button>
             <p class="form-message" id="signup-message" role="status" aria-live="polite"></p>
@@ -444,6 +444,26 @@
             <p class="form-message" id="login-message" role="status" aria-live="polite"></p>
           </form>
           <p class="modal-switch">No account yet? <button type="button" class="switch-link" id="switch-to-signup">Sign up free</button></p>
+          <button type="button" class="forgot-link" id="forgot-password-btn">Forgot password?</button>
+
+          <div class="forgot-step" id="forgot-step" style="display:none;">
+            <p class="verify-icon">🔑</p>
+            <h3>Reset your password</h3>
+            <p class="verify-text">Enter your email and we'll send you a 6-digit reset code.</p>
+            <form id="forgot-form" novalidate>
+              <input type="email" id="forgot-email" placeholder="Your email address" required />
+              <button type="submit" class="section-cta" id="forgot-send-btn">Send reset code 📧</button>
+              <p class="form-message" id="forgot-message" role="status" aria-live="polite"></p>
+            </form>
+
+            <div id="forgot-reset-step" style="display:none;">
+              <p class="verify-text">Enter the 6-digit code we sent to your email, plus your new password.</p>
+              <input type="text" id="reset-code-input" class="code-input" placeholder="000000" maxlength="6" inputmode="numeric" />
+              <input type="password" id="reset-password-input" placeholder="New password (min 6 chars)" style="margin-top:12px;" />
+              <button type="button" class="section-cta" id="reset-confirm-btn" style="margin-top:12px;">Reset password ✅</button>
+              <p class="form-message" id="reset-message" role="status" aria-live="polite"></p>
+            </div>
+          </div>
         </div>
       </div>
     </div>

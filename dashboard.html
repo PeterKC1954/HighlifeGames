@@ -64,6 +64,16 @@
             <span class="admin-stat-value" id="stat-pending-approval">0</span>
             <span class="admin-stat-label">Pending Approval</span>
           </div>
+          <div class="admin-stat-card">
+            <span class="admin-stat-icon">🔔</span>
+            <span class="admin-stat-value" id="stat-waiting-list">0</span>
+            <span class="admin-stat-label">Waiting List</span>
+          </div>
+          <div class="admin-stat-card">
+            <span class="admin-stat-icon">💬</span>
+            <span class="admin-stat-value" id="stat-unread-messages">0</span>
+            <span class="admin-stat-label">Unread Messages</span>
+          </div>
         </div>
 
         <div class="admin-coming-soon">
@@ -192,6 +202,18 @@
         document.getElementById("stat-advertisers").textContent = advertisers;
         document.getElementById("stat-confirmed").textContent = confirmed;
         document.getElementById("stat-pending-approval").textContent = pendingApproval;
+
+        // Fetch waiting list count and unread messages for stats
+        const token = window.authApi.getToken();
+        window.supabaseClient.rpc("get_waiting_list_count").then(({ data }) => {
+          if (data && data.count != null) document.getElementById("stat-waiting-list").textContent = data.count;
+        });
+        window.supabaseClient.rpc("get_contact_submissions", { p_token: token }).then(({ data: msgs }) => {
+          if (Array.isArray(msgs)) {
+            const unread = msgs.filter(m => !m.is_read).length;
+            document.getElementById("stat-unread-messages").textContent = unread;
+          }
+        });
       }
 
       function renderUsers(users) {

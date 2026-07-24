@@ -151,6 +151,15 @@ section { padding: 100px clamp(20px, 5vw, 64px); }
 .modal-switch { color: var(--muted); font-size: .9rem; margin: 20px 0 0; }
 .switch-link { background: none; border: none; color: var(--yellow-green); cursor: pointer; font-family: "Sora", sans-serif; font-size: .9rem; font-weight: 600; text-decoration: underline; transition: color .2s; }
 .switch-link:hover { color: var(--white); }
+.forgot-link { background: none; border: none; color: var(--muted); cursor: pointer; font-family: "Sora", sans-serif; font-size: .85rem; margin-top: 12px; text-decoration: underline; transition: color .2s; }
+.forgot-link:hover { color: var(--white); }
+.forgot-step { margin-top: 20px; text-align: center; }
+.forgot-step .verify-icon { font-size: 2.5rem; margin: 0 0 8px; }
+.forgot-step h3 { color: var(--white); font-size: 1.3rem; margin: 0 0 8px; }
+.forgot-step .verify-text { color: var(--muted); font-size: .9rem; margin: 0 0 20px; }
+.forgot-step form { display: flex; flex-direction: column; gap: 12px; }
+.forgot-step input { background: var(--dark-3); border: 1px solid rgba(255,255,255,.08); border-radius: 10px; color: var(--white); font-family: "Sora", sans-serif; font-size: .95rem; padding: 14px 16px; transition: border-color .2s; }
+.forgot-step input:focus { border-color: var(--yellow-green); outline: none; }
 
 .contact { background: var(--dark-2); }
 .contact .eyebrow { color: var(--blue-bell); }
@@ -502,3 +511,16 @@ main, .site-footer, .cookie-banner { position: relative; z-index: 1; }
   .discount-tiers { gap: 8px; }
   .discount-tier { min-width: 80px; padding: 10px 12px; }
 }
+
+/* ===== LEGAL PAGES ===== */
+.legal-page { min-height: 100vh; }
+.legal-section { padding: 80px 20px 120px; }
+.legal-inner { max-width: 760px; margin: 0 auto; }
+.legal-inner h1 { color: var(--white); font-family: "Bebas Neue", sans-serif; font-size: 2.8rem; letter-spacing: .02em; margin: 8px 0 4px; text-transform: uppercase; }
+.legal-updated { color: var(--muted); font-size: .85rem; margin: 0 0 32px; }
+.legal-inner h2 { color: var(--yellow-green); font-size: 1.2rem; font-weight: 700; margin: 32px 0 10px; }
+.legal-inner p { color: var(--muted); font-size: .95rem; line-height: 1.7; margin: 0 0 12px; }
+.legal-inner ul { color: var(--muted); font-size: .95rem; line-height: 1.7; padding-left: 20px; margin: 0 0 16px; }
+.legal-inner ul li { margin-bottom: 6px; }
+.legal-inner a { color: var(--blue-bell); text-decoration: underline; }
+.legal-inner b { color: var(--white); }
