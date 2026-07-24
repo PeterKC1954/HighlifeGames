@@ -56,16 +56,28 @@ setSignupMode("player");
 
 // ===== DEEP LINKING =====
 // ?ref=CODE → pre-fill referral code and open signup modal
+// ?session=expired → show session expired message
 // #signup → open player signup modal
 // #login → open login modal
 (function handleDeepLinks() {
-  const refCode = window.authApi.getReferralCodeFromURL();
+  const params = new URLSearchParams(window.location.search);
+  const refCode = (params.get("ref") || "").toUpperCase().trim();
+  const sessionExpired = params.get("session") === "expired";
   const hash = window.location.hash.toLowerCase();
+
+  if (sessionExpired) {
+    const banner = document.createElement("div");
+    banner.style.cssText = "position:fixed;top:0;left:0;right:0;z-index:9999;background:#fc6b6b;color:#fff;text-align:center;padding:12px 20px;font-family:Sora,sans-serif;font-size:.9rem;font-weight:600;";
+    banner.textContent = "Your session has expired. Please log in again.";
+    document.body.prepend(banner);
+    setTimeout(() => banner.style.display = "none", 5000);
+    // Clean URL
+    window.history.replaceState({}, "", window.location.pathname);
+  }
 
   if (refCode) {
     const refInput = document.querySelector('input[name="referralCode"]');
     if (refInput) refInput.value = refCode;
-    // Open signup modal in player mode after DOM is ready
     setTimeout(() => openModal("player"), 300);
   } else if (hash === "#signup") {
     setTimeout(() => openModal("player"), 300);
@@ -483,6 +495,12 @@ if (loginForm && loginMessage) {
     if (!result.is_confirmed && result.account_type !== "admin") {
       return;
     }
+
+    // Don't redirect if user came via referral link or hash route
+    const params = new URLSearchParams(window.location.search);
+    const hasRef = params.get("ref");
+    const hash = window.location.hash.toLowerCase();
+    if (hasRef || hash === "#signup") return;
 
     window.authApi.routeByAccountType(result.account_type, result.is_approved);
   } catch (err) {

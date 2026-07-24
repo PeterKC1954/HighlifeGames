@@ -120,7 +120,7 @@
         const session = await window.authApi.validateSession(token);
         if (!session || session.error) {
           if (session && session.error) window.authApi.clearToken();
-          window.location.href = "index.html";
+          window.location.href = "index.html?session=expired";
           return;
         }
 

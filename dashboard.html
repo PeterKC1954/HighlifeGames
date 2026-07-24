@@ -107,7 +107,7 @@
         const session = await window.authApi.validateSession(token);
         if (!session || session.error || session.account_type !== "admin") {
           if (session && session.error) window.authApi.clearToken();
-          window.location.href = "index.html";
+          window.location.href = "index.html?session=expired";
           return;
         }
 
