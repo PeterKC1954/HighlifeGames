@@ -150,10 +150,11 @@
         document.getElementById("referral-count").textContent = refCount || 0;
 
         document.getElementById("copy-referral").addEventListener("click", () => {
-          navigator.clipboard.writeText(profileData.referral_code || "");
+          const link = window.authApi.buildReferralLink(profileData.referral_code || "");
+          navigator.clipboard.writeText(link);
           const btn = document.getElementById("copy-referral");
-          btn.textContent = "Copied! \u2705";
-          setTimeout(() => { btn.textContent = "Copy \ud83d\udccb"; }, 2000);
+          btn.textContent = "Link copied! \u2705";
+          setTimeout(() => { btn.textContent = "Copy link \ud83d\udccb"; }, 2000);
         });
 
         await loadClaims();

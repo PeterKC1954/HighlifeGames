@@ -80,6 +80,16 @@ const authApi = {
       window.location.href = "waiting-room.html";
     }
   },
+
+  buildReferralLink(code) {
+    const base = window.location.origin + window.location.pathname;
+    return base + "?ref=" + code;
+  },
+
+  getReferralCodeFromURL() {
+    const params = new URLSearchParams(window.location.search);
+    return (params.get("ref") || "").toUpperCase().trim();
+  },
 };
 
 window.authApi = authApi;

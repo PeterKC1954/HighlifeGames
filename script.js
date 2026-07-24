@@ -54,6 +54,33 @@ function setSignupMode(mode) {
 
 setSignupMode("player");
 
+// ===== DEEP LINKING =====
+// ?ref=CODE → pre-fill referral code and open signup modal
+// #signup → open player signup modal
+// #login → open login modal
+(function handleDeepLinks() {
+  const refCode = window.authApi.getReferralCodeFromURL();
+  const hash = window.location.hash.toLowerCase();
+
+  if (refCode) {
+    const refInput = document.querySelector('input[name="referralCode"]');
+    if (refInput) refInput.value = refCode;
+    // Open signup modal in player mode after DOM is ready
+    setTimeout(() => openModal("player"), 300);
+  } else if (hash === "#signup") {
+    setTimeout(() => openModal("player"), 300);
+  } else if (hash === "#login") {
+    setTimeout(() => {
+      const loginModal = document.getElementById("login-modal");
+      if (loginModal) {
+        loginModal.classList.add("is-open");
+        loginModal.setAttribute("aria-hidden", "false");
+        document.body.style.overflow = "hidden";
+      }
+    }, 300);
+  }
+})();
+
 if (signupForm && signupMessage) {
   signupForm.addEventListener("submit", async (e) => {
     e.preventDefault();
