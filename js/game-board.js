@@ -19,6 +19,30 @@ const SQUARE_TYPES = {
   blank_company:  { color: 0x34495e, label: 'Blank Company Slot', icon: '📐' },
 };
 
+// ===== 20 COMPANY SPONSORS (from PPTX) =====
+const COMPANIES = [
+  { id: 1,  name: 'TechCorp',       colour: 0xe74c3c, cardImg: 'assets/companies/image1.jpg',  baseReward: 5000 },
+  { id: 2,  name: 'GreenEnergy',    colour: 0x2ecc71, cardImg: 'assets/companies/image2.jpg',  baseReward: 4000 },
+  { id: 3,  name: 'FoodPlus',       colour: 0xf39c12, cardImg: 'assets/companies/image3.jpg',  baseReward: 3500 },
+  { id: 4,  name: 'AutoDrive',      colour: 0x3498db, cardImg: 'assets/companies/image4.jpg',  baseReward: 4500 },
+  { id: 5,  name: 'StyleCo',        colour: 0xe91e63, cardImg: 'assets/companies/image5.jpg',  baseReward: 3000 },
+  { id: 6,  name: 'HomeBuild',      colour: 0x8e44ad, cardImg: 'assets/companies/image6.jpg',  baseReward: 5500 },
+  { id: 7,  name: 'HealthFirst',    colour: 0x16a085, cardImg: 'assets/companies/image7.jpg',  baseReward: 4200 },
+  { id: 8,  name: 'EduSmart',       colour: 0xd35400, cardImg: 'assets/companies/image8.jpg',  baseReward: 3800 },
+  { id: 9,  name: 'TravelWise',     colour: 0x2980b9, cardImg: 'assets/companies/image9.jpg',  baseReward: 4800 },
+  { id: 10, name: 'FinSecure',      colour: 0x27ae60, cardImg: 'assets/companies/image10.jpg', baseReward: 6000 },
+  { id: 11, name: 'MediaHub',       colour: 0xc0392b, cardImg: 'assets/companies/image11.jpg', baseReward: 3200 },
+  { id: 12, name: 'SportZone',      colour: 0x2c3e50, cardImg: 'assets/companies/image12.jpg', baseReward: 3600 },
+  { id: 13, name: 'BeautyBox',      colour: 0xe84393, cardImg: 'assets/companies/image13.jpg', baseReward: 2800 },
+  { id: 14, name: 'GadgetPro',      colour: 0x00cec9, cardImg: 'assets/companies/image14.jpg', baseReward: 5200 },
+  { id: 15, name: 'AgriGrow',       colour: 0x6ab04c, cardImg: 'assets/companies/image15.jpg', baseReward: 3400 },
+  { id: 16, name: 'LogiMove',       colour: 0xfd79a8, cardImg: 'assets/companies/image16.jpg', baseReward: 4600 },
+  { id: 17, name: 'CloudNet',       colour: 0x0984e3, cardImg: 'assets/companies/image17.jpg', baseReward: 5000 },
+  { id: 18, name: 'PureWater',      colour: 0x00b894, cardImg: 'assets/companies/image18.jpg', baseReward: 3900 },
+  { id: 19, name: 'BuildMakers',    colour: 0xa29bfe, cardImg: 'assets/companies/image19.jpg', baseReward: 4400 },
+  { id: 20, name: 'PetCare',        colour: 0xffeaa7, cardImg: 'assets/companies/image20.jpg', baseReward: 2600 },
+];
+
 // Board layout (40 tiles around the edge, clockwise from bottom-left = Start)
 const BOARD_LAYOUT = [
   'start', 'company', 'company', 'disaster', 'company',
@@ -30,6 +54,20 @@ const BOARD_LAYOUT = [
   'buy_now', 'company', 'company', 'disaster', 'company',
   'building_soc', 'company', 'blank_company', 'account_report', 'company',
 ];
+
+// Map company tiles in the board layout to specific companies
+const COMPANY_TILE_INDICES = [];
+BOARD_LAYOUT.forEach((type, i) => {
+  if (type === 'company' || type === 'blank_company') {
+    COMPANY_TILE_INDICES.push(i);
+  }
+});
+
+// Assign companies to tiles
+const tileCompanyMap = {};
+COMPANY_TILE_INDICES.forEach((tileIdx, i) => {
+  tileCompanyMap[tileIdx] = COMPANIES[i % COMPANIES.length];
+});
 
 // ===== THREE.JS SETUP =====
 const canvas = document.getElementById('game-canvas');
@@ -148,10 +186,12 @@ BOARD_LAYOUT.forEach((type, i) => {
   scene.add(tile);
   tileMeshes.push(tile);
 
-  // Add a colored top strip for company tiles
+  // Add a coloured top strip for company tiles
   if (type === 'company' || type === 'blank_company') {
+    const company = tileCompanyMap[i];
+    const stripColour = company ? company.colour : 0xabd40a;
     const stripGeo = new THREE.BoxGeometry(TILE_SIZE * 0.95, 0.04, TILE_SIZE * 0.25);
-    const stripMat = new THREE.MeshStandardMaterial({ color: 0xabd40a, roughness: 0.5 });
+    const stripMat = new THREE.MeshStandardMaterial({ color: stripColour, roughness: 0.5, emissive: stripColour, emissiveIntensity: 0.15 });
     const strip = new THREE.Mesh(stripGeo, stripMat);
     // Position strip at the inner edge of the tile
     const innerDir = new THREE.Vector3(-pos.x, 0, -pos.z).normalize();
@@ -275,7 +315,14 @@ ring.rotation.x = Math.PI / 2;
 ring.position.y = 0.12;
 scene.add(ring);
 
-// Center info display canvas (shows game state)
+// Load logo texture for center display
+const logoImg = new Image();
+logoImg.crossOrigin = 'anonymous';
+logoImg.src = 'assets/hl_logo.png';
+let logoLoaded = false;
+logoImg.onload = () => { logoLoaded = true; updateInfoDisplay(); };
+
+// Center info display canvas (shows game state + logo)
 const infoCanvas = document.createElement('canvas');
 infoCanvas.width = 512;
 infoCanvas.height = 512;
@@ -287,56 +334,48 @@ function updateInfoDisplay() {
   ctx.fillStyle = '#0f1923';
   ctx.fillRect(0, 0, 512, 512);
 
-  // Border
-  ctx.strokeStyle = '#abd40a';
-  ctx.lineWidth = 4;
-  ctx.strokeRect(8, 8, 496, 496);
-
-  // Title
-  ctx.fillStyle = '#abd40a';
-  ctx.font = 'bold 36px Sora, sans-serif';
-  ctx.textAlign = 'center';
-  ctx.fillText('HIGHLIFE GAMES', 256, 60);
+  // Draw logo large in center
+  if (logoLoaded) {
+    const logoSize = 300;
+    const logoX = 256 - logoSize / 2;
+    const logoY = 256 - logoSize / 2;
+    ctx.drawImage(logoImg, logoX, logoY, logoSize, logoSize);
+  }
 
   // Current player
   const player = gameState.players[gameState.currentPlayer];
   if (player) {
     ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 28px Sora, sans-serif';
-    ctx.fillText(`${player.avatar} ${player.name}`, 256, 110);
+    ctx.font = 'bold 24px Sora, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(`${player.avatar} ${player.name}`, 256, 60);
     ctx.fillStyle = '#abd40a';
     ctx.font = '20px Sora, sans-serif';
-    ctx.fillText(`${player.hecu.toLocaleString()} HECU`, 256, 145);
+    ctx.fillText(`${player.hecu.toLocaleString()} HECU`, 256, 90);
   }
 
   // Turn phase
   ctx.fillStyle = '#a8c4d8';
-  ctx.font = '18px Sora, sans-serif';
+  ctx.font = '16px Sora, sans-serif';
   const phaseText = {
     waiting: 'Roll the dice to begin your turn',
     rolling: 'Rolling dice...',
     moving: 'Moving...',
     event: 'Event in progress',
   };
-  ctx.fillText(phaseText[gameState.turnPhase] || '', 256, 190);
+  ctx.fillText(phaseText[gameState.turnPhase] || '', 256, 120);
 
-  // Player standings
+  // Player standings at bottom
   ctx.fillStyle = '#ffffff';
-  ctx.font = 'bold 16px Sora, sans-serif';
+  ctx.font = 'bold 14px Sora, sans-serif';
   ctx.textAlign = 'left';
-  ctx.fillText('Standings:', 40, 240);
+  ctx.fillText('Standings:', 40, 410);
   gameState.players.forEach((p, i) => {
     const isCurrent = i === gameState.currentPlayer;
     ctx.fillStyle = isCurrent ? '#abd40a' : '#a8c4d8';
-    ctx.font = isCurrent ? 'bold 18px Sora, sans-serif' : '16px Sora, sans-serif';
-    ctx.fillText(`${p.avatar} ${p.name} — ${p.hecu.toLocaleString()} HECU`, 60, 270 + i * 30);
+    ctx.font = isCurrent ? 'bold 15px Sora, sans-serif' : '13px Sora, sans-serif';
+    ctx.fillText(`${p.avatar} ${p.name} — ${p.hecu.toLocaleString()} HECU`, 60, 432 + i * 22);
   });
-
-  // Bottom info
-  ctx.fillStyle = '#4a6a8a';
-  ctx.font = '14px Sora, sans-serif';
-  ctx.textAlign = 'center';
-  ctx.fillText('Account Controller → Account Director', 256, 470);
 
   infoTexture.needsUpdate = true;
 }
@@ -348,14 +387,66 @@ infoPlane.rotation.x = -Math.PI / 2;
 infoPlane.position.y = 0.15;
 scene.add(infoPlane);
 
+// 3D Logo removed — logo is now in center display only
+
 // ===== GAME STATE =====
 const gameState = {
   players: [],
   currentPlayer: 0,
   isRolling: false,
   isMoving: false,
-  turnPhase: 'waiting', // waiting, rolling, moving, event
+  turnPhase: 'waiting', // waiting, rolling, moving, event, question
+  // Company ownership: tileIndex -> { ownerId, workers: [] }
+  companyOwnership: {},
+  // Question flow state
+  questionFlow: {
+    active: false,
+    tileIndex: null,
+    company: null,
+    phase: null, // advert, question, answer, result
+    timer: 0,
+    timerInterval: null,
+    boffinUsed: false,
+    rewardValue: 0,
+    isConsultation: false,
+    consultingPlayer: null,
+  },
 };
+
+// ===== BOFFINS SYSTEM =====
+const BOFFIN_TYPES = [
+  { id: 'hint',    name: 'Hint Boffin',    reduction: 0.75, icon: '💡', desc: 'Shows a hint, reward ×0.75' },
+  { id: 'eliminate', name: 'Eliminate Boffin', reduction: 0.50, icon: '✂️', desc: 'Removes 2 wrong answers, reward ×0.50' },
+  { id: 'expert',  name: 'Expert Boffin',  reduction: 0.25, icon: '🎓', desc: 'Expert advice, reward ×0.25' },
+];
+
+// ===== TEAM WORKER 3D OBJECTS =====
+const teamWorkerMeshes = {}; // tileIndex -> array of meshes
+
+function createTeamWorker(tileIndex, playerIndex) {
+  const pos = getTilePosition(tileIndex);
+  const playerColor = TOKEN_COLORS[playerIndex];
+  const geo = new THREE.CapsuleGeometry(0.08, 0.12, 4, 8);
+  const mat = new THREE.MeshStandardMaterial({ color: playerColor, roughness: 0.3, metalness: 0.6, emissive: playerColor, emissiveIntensity: 0.2 });
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.castShadow = true;
+
+  // Count existing workers on this tile
+  const existing = teamWorkerMeshes[tileIndex] || [];
+  const workerCount = existing.length;
+  const angle = (workerCount / 6) * Math.PI * 2;
+  const radius = 0.25;
+  mesh.position.set(
+    pos.x + Math.cos(angle) * radius,
+    TILE_HEIGHT + 0.15,
+    pos.z + Math.sin(angle) * radius,
+  );
+  scene.add(mesh);
+
+  if (!teamWorkerMeshes[tileIndex]) teamWorkerMeshes[tileIndex] = [];
+  teamWorkerMeshes[tileIndex].push(mesh);
+  return mesh;
+}
 
 // ===== ANIMATE TOKEN MOVEMENT =====
 async function moveToken(token, fromIndex, toIndex) {
@@ -481,11 +572,55 @@ async function rollDice() {
   gameState.turnPhase = 'event';
 }
 
+// ===== COMPANY SQUARE DICE (colour-banded) =====
+function rollCompanyDice(company) {
+  const roll = Math.floor(Math.random() * 6) + 1;
+  const multiplier = roll / 6; // 1/6 to 1.0
+  return Math.round(company.baseReward * multiplier);
+}
+
+// ===== SAMPLE QUESTIONS (placeholder — will come from Supabase) =====
+const SAMPLE_QUESTIONS = [
+  {
+    question: 'What is the primary service of this company?',
+    options: ['Cloud Computing', 'Food Delivery', 'Car Rental', 'Pet Grooming'],
+    correct: 0,
+  },
+  {
+    question: 'Which year was this company founded?',
+    options: ['1998', '2005', '2012', '2019'],
+    correct: 1,
+  },
+  {
+    question: 'What is the company\s main product?',
+    options: ['Software Platform', 'Physical Goods', 'Consulting Service', 'Mobile App'],
+    correct: 2,
+  },
+  {
+    question: 'Where is this company headquartered?',
+    options: ['London', 'Manchester', 'Birmingham', 'Leeds'],
+    correct: 0,
+  },
+];
+
+function getRandomQuestion() {
+  return SAMPLE_QUESTIONS[Math.floor(Math.random() * SAMPLE_QUESTIONS.length)];
+}
+
 // ===== SHOW SQUARE EVENT =====
 function showSquareEvent(tileIndex) {
   const tile = tiles[tileIndex];
   if (!tile) return;
 
+  const tileType = tile.type;
+
+  // Company squares get the full question flow
+  if (tileType === 'company' || tileType === 'blank_company') {
+    handleCompanySquare(tileIndex);
+    return;
+  }
+
+  // Non-company squares use the simple modal
   const modal = document.getElementById('event-modal');
   const iconEl = document.getElementById('event-icon');
   const titleEl = document.getElementById('event-title');
@@ -497,16 +632,14 @@ function showSquareEvent(tileIndex) {
 
   const descriptions = {
     start: 'Training Grant Square! Collect your training award for each Account Worker you hold.',
-    company: 'A Company Square! Answer a sponsored question correctly to place an Account Worker here.',
     disaster: 'Disaster Square! You may lose an Asset Item if you don\'t have insurance.',
     building_soc: 'Building Society! Your HECUs may increase or decrease based on the market.',
     news_feed: 'News Feed Square! You receive a Lotto Ticket. Watch the draw for a chance to win HECUs!',
     buy_now: 'Buy Now Square! Purchase Boffins with Gold Coins to help with your questions.',
     account_report: 'Account Report Square! Receive a Report Card with positive or negative results.',
-    blank_company: 'Blank Company Slot! Claim this slot and gain a Client Account Card.',
   };
 
-  descEl.textContent = descriptions[tile.type] || 'You landed on a square.';
+  descEl.textContent = descriptions[tileType] || 'You landed on a square.';
   btnEl.textContent = 'Continue';
 
   modal.classList.add('is-open');
@@ -515,6 +648,408 @@ function showSquareEvent(tileIndex) {
     modal.classList.remove('is-open');
     nextTurn();
   };
+}
+
+// ===== HANDLE COMPANY SQUARE (3 scenarios from PPTX) =====
+function handleCompanySquare(tileIndex) {
+  const company = tileCompanyMap[tileIndex];
+  if (!company) return;
+
+  const ownership = gameState.companyOwnership[tileIndex];
+  const currentPlayerId = gameState.currentPlayer;
+
+  if (!ownership) {
+    // Scenario 1: Unissued company square
+    startCompanyQuestionFlow(tileIndex, company, currentPlayerId, false);
+  } else if (ownership.ownerId === currentPlayerId) {
+    // Scenario 2: Owned by current player
+    startCompanyQuestionFlow(tileIndex, company, currentPlayerId, false, true);
+  } else {
+    // Scenario 3: Owned by another player (consultation)
+    startConsultationFlow(tileIndex, company, ownership.ownerId, currentPlayerId);
+  }
+}
+
+// ===== COMPANY QUESTION FLOW =====
+function startCompanyQuestionFlow(tileIndex, company, playerId, isConsultation, isOwnCompany = false) {
+  const qf = gameState.questionFlow;
+  qf.active = true;
+  qf.tileIndex = tileIndex;
+  qf.company = company;
+  qf.playerId = playerId;
+  qf.isConsultation = isConsultation;
+  qf.boffinUsed = false;
+  qf.isOwnCompany = isOwnCompany;
+  gameState.turnPhase = 'question';
+
+  // Roll company dice for reward value
+  let reward = rollCompanyDice(company);
+
+  if (isConsultation) {
+    // Consultation: reward is 10% of basic value
+    reward = Math.round(company.baseReward * 0.10);
+  } else if (isOwnCompany) {
+    // Own company: full reward (or 50% if no click)
+    // Will handle the no-click case in the advert phase
+  }
+
+  qf.rewardValue = reward;
+  qf.question = getRandomQuestion();
+
+  // Show advert phase (10 seconds)
+  showAdvertPhase(company, playerId, isOwnCompany);
+}
+
+// ===== ADVERT PHASE (10 seconds) =====
+function showAdvertPhase(company, playerId, isOwnCompany) {
+  const qf = gameState.questionFlow;
+  qf.phase = 'advert';
+  qf.timer = 10;
+
+  const modal = document.getElementById('question-modal');
+  const content = document.getElementById('question-modal-content');
+
+  const player = gameState.players[playerId];
+  const message = isOwnCompany
+    ? `Click screen to attempt question to gain another Team Worker on this Company Account. Boffins allowed — select any on screen.`
+    : `Click screen to attempt question to gain this account. Use of Boffins not allowed.`;
+
+  // Show boffins if own company
+  const boffinsHtml = isOwnCompany && player.boffins.length > 0
+    ? `<div class="boffin-list">
+        <p class="boffin-title">Your Boffins (click to use — reduces reward):</p>
+        ${player.boffins.map((b, i) => `
+          <button class="boffin-btn" data-boffin="${i}">
+            <span class="boffin-icon">${b.icon}</span>
+            <span class="boffin-name">${b.name}</span>
+            <span class="boffin-reward">Reward ×${b.reduction}</span>
+          </button>
+        `).join('')}
+      </div>`
+    : '';
+
+  content.innerHTML = `
+    <div class="advert-display">
+      <img src="${company.cardImg}" alt="${company.name}" class="company-card-img" />
+      <h2 class="company-name">${company.name}</h2>
+      <p class="advert-message">${message}</p>
+      <div class="advert-timer" id="advert-timer">${qf.timer}s</div>
+      <button class="advert-click-btn" id="advert-click-btn">Click to Attempt Question</button>
+      ${boffinsHtml}
+    </div>
+  `;
+
+  modal.classList.add('is-open');
+
+  // Timer countdown
+  qf.timerInterval = setInterval(() => {
+    qf.timer--;
+    const timerEl = document.getElementById('advert-timer');
+    if (timerEl) timerEl.textContent = `${qf.timer}s`;
+
+    if (qf.timer <= 0) {
+      clearInterval(qf.timerInterval);
+      // No click in time
+      if (qf.isOwnCompany) {
+        // Action 3a: auto dice roll, 50% value credited
+        const halfReward = Math.round(qf.rewardValue * 0.5);
+        gameState.players[playerId].hecu += halfReward;
+        closeQuestionModal();
+        showResultMessage(`${player.name} didn't click — auto 50% reward: ${halfReward} HECU`);
+      } else {
+        // Action 1a: go ends
+        closeQuestionModal();
+        showResultMessage(`${player.name} didn't click — turn ends.`);
+      }
+      endQuestionFlow();
+    }
+  }, 1000);
+
+  // Click handler
+  document.getElementById('advert-click-btn').addEventListener('click', () => {
+    clearInterval(qf.timerInterval);
+    showQuestionPhase();
+  });
+
+  // Boffin click handlers
+  if (isOwnCompany) {
+    document.querySelectorAll('.boffin-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const boffinIdx = parseInt(btn.dataset.boffin);
+        useBoffin(boffinIdx, playerId);
+        clearInterval(qf.timerInterval);
+        showQuestionPhase();
+      });
+    });
+  }
+}
+
+// ===== USE BOFFIN =====
+function useBoffin(boffinIdx, playerId) {
+  const player = gameState.players[playerId];
+  const boffin = player.boffins[boffinIdx];
+  if (!boffin) return;
+
+  // Reduce reward
+  gameState.questionFlow.rewardValue = Math.round(gameState.questionFlow.rewardValue * boffin.reduction);
+  gameState.questionFlow.boffinUsed = boffin;
+
+  // Remove boffin from player
+  player.boffins.splice(boffinIdx, 1);
+}
+
+// ===== QUESTION PHASE (20 seconds read-only) =====
+function showQuestionPhase() {
+  const qf = gameState.questionFlow;
+  qf.phase = 'question';
+  qf.timer = 20;
+
+  const content = document.getElementById('question-modal-content');
+  const player = gameState.players[qf.playerId];
+  const boffinNote = qf.boffinUsed ? `<p class="boffin-used-note">${qf.boffinUsed.icon} ${qf.boffinUsed.name} used — reward reduced to ${qf.rewardValue.toLocaleString()} HECU</p>` : '';
+
+  content.innerHTML = `
+    <div class="question-display">
+      <div class="question-header">
+        <img src="${qf.company.cardImg}" alt="${qf.company.name}" class="company-card-img-small" />
+        <div>
+          <h2 class="company-name">${qf.company.name}</h2>
+          <p class="reward-display">Reward: ${qf.rewardValue.toLocaleString()} HECU</p>
+        </div>
+      </div>
+      ${boffinNote}
+      <div class="question-text" id="question-text">${qf.question.question}</div>
+      <div class="question-timer" id="question-timer">${qf.timer}s — Read carefully</div>
+    </div>
+  `;
+
+  // Timer countdown
+  qf.timerInterval = setInterval(() => {
+    qf.timer--;
+    const timerEl = document.getElementById('question-timer');
+    if (timerEl) timerEl.textContent = `${qf.timer}s — Read carefully`;
+
+    if (qf.timer <= 0) {
+      clearInterval(qf.timerInterval);
+      showAnswerPhase();
+    }
+  }, 1000);
+}
+
+// ===== ANSWER PHASE (20 seconds, 4 options) =====
+function showAnswerPhase() {
+  const qf = gameState.questionFlow;
+  qf.phase = 'answer';
+  qf.timer = 20;
+
+  const content = document.getElementById('question-modal-content');
+  const player = gameState.players[qf.playerId];
+
+  // If eliminate boffin used, remove 2 wrong answers
+  let options = [...qf.question.options];
+  let correctIdx = qf.question.correct;
+
+  if (qf.boffinUsed && qf.boffinUsed.id === 'eliminate') {
+    const wrongIndices = options.map((_, i) => i).filter(i => i !== correctIdx);
+    // Remove 2 wrong answers
+    const toRemove = wrongIndices.sort(() => Math.random() - 0.5).slice(0, 2);
+    const newOptions = [];
+    const newCorrectMap = [];
+    options.forEach((opt, i) => {
+      if (!toRemove.includes(i)) {
+        newCorrectMap.push(i);
+        newOptions.push(opt);
+      }
+    });
+    options = newOptions;
+    correctIdx = newCorrectMap.indexOf(qf.question.correct);
+  }
+
+  const boffinHint = qf.boffinUsed && qf.boffinUsed.id === 'hint'
+    ? `<p class="boffin-hint-text">💡 Hint: The answer relates to the company's core business.</p>`
+    : '';
+
+  const boffinExpert = qf.boffinUsed && qf.boffinUsed.id === 'expert'
+    ? `<p class="boffin-hint-text">🎓 Expert suggests: Option ${correctIdx + 1} is most likely correct.</p>`
+    : '';
+
+  content.innerHTML = `
+    <div class="answer-display">
+      <div class="question-text-small">${qf.question.question}</div>
+      ${boffinHint}
+      ${boffinExpert}
+      <div class="answer-options" id="answer-options">
+        ${options.map((opt, i) => `
+          <button class="answer-option" data-answer="${i}">${opt}</button>
+        `).join('')}
+      </div>
+      <div class="answer-timer" id="answer-timer">${qf.timer}s</div>
+    </div>
+  `;
+
+  // Timer countdown
+  qf.timerInterval = setInterval(() => {
+    qf.timer--;
+    const timerEl = document.getElementById('answer-timer');
+    if (timerEl) timerEl.textContent = `${qf.timer}s`;
+
+    if (qf.timer <= 0) {
+      clearInterval(qf.timerInterval);
+      // No answer selected — turn ends
+      handleAnswerResult(false, qf.playerId);
+    }
+  }, 1000);
+
+  // Answer click handlers
+  document.querySelectorAll('.answer-option').forEach(btn => {
+    btn.addEventListener('click', () => {
+      clearInterval(qf.timerInterval);
+      const selectedIdx = parseInt(btn.dataset.answer);
+      const isCorrect = selectedIdx === correctIdx;
+      handleAnswerResult(isCorrect, qf.playerId);
+    });
+  });
+}
+
+// ===== HANDLE ANSWER RESULT =====
+function handleAnswerResult(isCorrect, playerId) {
+  const qf = gameState.questionFlow;
+  const player = gameState.players[playerId];
+  const tileIndex = qf.tileIndex;
+
+  closeQuestionModal();
+
+  if (isCorrect) {
+    if (qf.isConsultation) {
+      // Consultation correct: controlling player gets 10% fee
+      gameState.players[qf.consultingPlayer].hecu += qf.rewardValue;
+      showResultMessage(`✅ Correct! ${gameState.players[qf.consultingPlayer].name} earned ${qf.rewardValue.toLocaleString()} HECU consultation fee.`);
+    } else {
+      // Normal correct answer
+      // Credit company account + team worker + HECU reward
+      if (!gameState.companyOwnership[tileIndex]) {
+        // New company account
+        gameState.companyOwnership[tileIndex] = { ownerId: playerId, workers: [playerId] };
+        player.companyAccounts.push(tileIndex);
+      } else {
+        // Add team worker to existing
+        gameState.companyOwnership[tileIndex].workers.push(playerId);
+      }
+
+      // Create 3D team worker on tile
+      createTeamWorker(tileIndex, playerId);
+
+      // Calculate HECU reward: reward per team worker
+      const workerCount = gameState.companyOwnership[tileIndex].workers.length;
+      const totalReward = qf.rewardValue * workerCount;
+      player.hecu += totalReward;
+
+      showResultMessage(`✅ Correct! ${player.name} gained a Team Worker and earned ${totalReward.toLocaleString()} HECU (${qf.rewardValue.toLocaleString()} × ${workerCount} workers).`);
+    }
+  } else {
+    if (qf.isConsultation) {
+      // Wrong consultation: landing player compensated 3x fee
+      const compensation = qf.rewardValue * 3;
+      gameState.players[playerId].hecu += compensation;
+      showResultMessage(`❌ Bad Consultation Advice! ${player.name} compensated with ${compensation.toLocaleString()} HECU (3× consultation fee).`);
+    } else {
+      showResultMessage(`❌ Wrong answer! ${player.name}'s turn ends.`);
+    }
+  }
+
+  endQuestionFlow();
+}
+
+// ===== CONSULTATION FLOW =====
+function startConsultationFlow(tileIndex, company, ownerId, landingPlayerId) {
+  const qf = gameState.questionFlow;
+  qf.active = true;
+  qf.tileIndex = tileIndex;
+  qf.company = company;
+  qf.playerId = ownerId; // The owner answers the question
+  qf.consultingPlayer = ownerId;
+  qf.landingPlayerId = landingPlayerId;
+  qf.isConsultation = true;
+  qf.boffinUsed = false;
+  gameState.turnPhase = 'question';
+
+  // Reward is 10% of basic value
+  qf.rewardValue = Math.round(company.baseReward * 0.10);
+  qf.question = getRandomQuestion();
+
+  const owner = gameState.players[ownerId];
+  const landingPlayer = gameState.players[landingPlayerId];
+
+  // Show consultation request to owner
+  const modal = document.getElementById('question-modal');
+  const content = document.getElementById('question-modal-content');
+
+  content.innerHTML = `
+    <div class="consultation-request">
+      <img src="${company.cardImg}" alt="${company.name}" class="company-card-img" />
+      <h2 class="company-name">${company.name}</h2>
+      <p class="consultation-message">Landing player <b>${landingPlayer.name}</b> wants to consult with you.</p>
+      <p class="consultation-note">Click screen to get question. No Boffins allowed.</p>
+      <p class="reward-display">Consultation Fee: ${qf.rewardValue.toLocaleString()} HECU (10% of base)</p>
+      <button class="advert-click-btn" id="consult-click-btn">Click to Answer Question</button>
+      <div class="advert-timer" id="advert-timer">10s</div>
+    </div>
+  `;
+
+  modal.classList.add('is-open');
+  qf.timer = 10;
+  qf.phase = 'advert';
+
+  qf.timerInterval = setInterval(() => {
+    qf.timer--;
+    const timerEl = document.getElementById('advert-timer');
+    if (timerEl) timerEl.textContent = `${qf.timer}s`;
+
+    if (qf.timer <= 0) {
+      clearInterval(qf.timerInterval);
+      closeQuestionModal();
+      showResultMessage(`${owner.name} didn't respond to consultation request. Turn ends.`);
+      endQuestionFlow();
+    }
+  }, 1000);
+
+  document.getElementById('consult-click-btn').addEventListener('click', () => {
+    clearInterval(qf.timerInterval);
+    showQuestionPhase();
+  });
+}
+
+// ===== CLOSE QUESTION MODAL =====
+function closeQuestionModal() {
+  const modal = document.getElementById('question-modal');
+  modal.classList.remove('is-open');
+}
+
+// ===== END QUESTION FLOW =====
+function endQuestionFlow() {
+  const qf = gameState.questionFlow;
+  if (qf.timerInterval) clearInterval(qf.timerInterval);
+  qf.active = false;
+  qf.phase = null;
+  qf.boffinUsed = false;
+  qf.isConsultation = false;
+  qf.consultingPlayer = null;
+  updateUI();
+  nextTurn();
+}
+
+// ===== SHOW RESULT MESSAGE (temporary toast) =====
+function showResultMessage(msg) {
+  const toast = document.createElement('div');
+  toast.className = 'game-toast';
+  toast.textContent = msg;
+  document.body.appendChild(toast);
+  setTimeout(() => toast.classList.add('show'), 50);
+  setTimeout(() => {
+    toast.classList.remove('show');
+    setTimeout(() => toast.remove(), 400);
+  }, 4000);
 }
 
 // ===== NEXT TURN =====
@@ -539,6 +1074,7 @@ function updateUI() {
       <div class="player-chip-info">
         <span class="player-chip-name">${p.name}</span>
         <span class="player-chip-hecu">${p.hecu.toLocaleString()} HECU</span>
+        <span class="player-chip-extra">${p.companyAccounts.length} accounts · ${p.boffins.length} boffins</span>
       </div>
     </div>
   `).join('');
@@ -553,11 +1089,11 @@ async function initGame() {
   // For now, create placeholder players
   // This will be replaced with real game session data from Supabase
   const placeholderPlayers = [
-    { name: 'Player 1', avatar: '🎲', hecu: 50000 },
-    { name: 'Player 2', avatar: '🏆', hecu: 50000 },
-    { name: 'Player 3', avatar: '🧠', hecu: 50000 },
-    { name: 'Player 4', avatar: '🛡️', hecu: 50000 },
-    { name: 'Player 5', avatar: '⭐', hecu: 50000 },
+    { name: 'Player 1', avatar: '🎲', hecu: 50000, boffins: [{ ...BOFFIN_TYPES[0] }, { ...BOFFIN_TYPES[1] }], assets: [], companyAccounts: [] },
+    { name: 'Player 2', avatar: '🏆', hecu: 50000, boffins: [{ ...BOFFIN_TYPES[0] }], assets: [], companyAccounts: [] },
+    { name: 'Player 3', avatar: '🧠', hecu: 50000, boffins: [{ ...BOFFIN_TYPES[2] }], assets: [], companyAccounts: [] },
+    { name: 'Player 4', avatar: '🛡️', hecu: 50000, boffins: [{ ...BOFFIN_TYPES[1] }, { ...BOFFIN_TYPES[2] }], assets: [], companyAccounts: [] },
+    { name: 'Player 5', avatar: '⭐', hecu: 50000, boffins: [{ ...BOFFIN_TYPES[0] }], assets: [], companyAccounts: [] },
   ];
 
   gameState.players = placeholderPlayers;

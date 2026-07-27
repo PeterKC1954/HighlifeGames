@@ -43,6 +43,7 @@
       .player-chip-info { display: flex; flex-direction: column; }
       .player-chip-name { font-size: .8rem; font-weight: 700; color: #fff; }
       .player-chip-hecu { font-size: .7rem; color: #abd40a; }
+      .player-chip-extra { font-size: .6rem; color: #6a8aaa; }
 
       /* Bottom action bar */
       .action-bar {
@@ -99,6 +100,83 @@
         font-family: "Sora", sans-serif; font-size: .95rem; font-weight: 700; padding: 12px 28px;
       }
       .event-btn:hover { background: #fcab10; color: #fff; }
+
+      /* Question modal */
+      .question-modal {
+        position: fixed; inset: 0; z-index: 110; display: none;
+        align-items: center; justify-content: center; background: rgba(0,0,0,.8);
+      }
+      .question-modal.is-open { display: flex; }
+      .question-modal-card {
+        background: #1e3344; border: 1px solid rgba(255,255,255,.12); border-radius: 20px;
+        max-width: 520px; width: calc(100% - 40px); padding: 32px 24px; text-align: center;
+        max-height: 90vh; overflow-y: auto;
+      }
+      .company-card-img {
+        width: 140px; height: 140px; object-fit: cover; border-radius: 12px;
+        border: 2px solid rgba(171,212,10,.3); margin-bottom: 12px;
+      }
+      .company-card-img-small {
+        width: 60px; height: 60px; object-fit: cover; border-radius: 8px;
+        border: 1px solid rgba(255,255,255,.15);
+      }
+      .company-name {
+        font-family: "Bebas Neue", sans-serif; font-size: 1.6rem; color: #fff; margin-bottom: 6px;
+      }
+      .advert-message, .consultation-message {
+        color: #a8c4d8; font-size: .9rem; line-height: 1.5; margin-bottom: 16px;
+      }
+      .consultation-note { color: #d02f7c; font-size: .85rem; margin-bottom: 12px; }
+      .advert-timer, .question-timer, .answer-timer {
+        font-family: "Bebas Neue", sans-serif; font-size: 1.8rem; color: #abd40a; margin: 12px 0;
+      }
+      .advert-click-btn {
+        background: #abd40a; border: 0; border-radius: 99px; color: #0f1923; cursor: pointer;
+        font-family: "Sora", sans-serif; font-size: 1rem; font-weight: 700; padding: 14px 28px;
+        transition: all .2s; margin: 8px 0;
+      }
+      .advert-click-btn:hover { background: #fcab10; color: #fff; }
+      .reward-display { color: #abd40a; font-size: .9rem; font-weight: 600; margin-bottom: 12px; }
+      .boffin-list { margin-top: 16px; text-align: left; }
+      .boffin-title { color: #fff; font-size: .85rem; font-weight: 600; margin-bottom: 8px; }
+      .boffin-btn {
+        display: flex; align-items: center; gap: 8px; width: 100%; padding: 10px 14px;
+        background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1); border-radius: 10px;
+        color: #fff; cursor: pointer; margin-bottom: 6px; transition: all .2s;
+      }
+      .boffin-btn:hover { border-color: #abd40a; background: rgba(171,212,10,.1); }
+      .boffin-icon { font-size: 1.2rem; }
+      .boffin-name { font-size: .85rem; font-weight: 600; flex: 1; text-align: left; }
+      .boffin-reward { font-size: .75rem; color: #d02f7c; }
+      .boffin-used-note {
+        background: rgba(171,212,10,.1); border: 1px solid rgba(171,212,10,.3); border-radius: 8px;
+        padding: 8px 12px; color: #abd40a; font-size: .85rem; margin-bottom: 12px;
+      }
+      .boffin-hint-text {
+        background: rgba(252,171,16,.1); border: 1px solid rgba(252,171,16,.3); border-radius: 8px;
+        padding: 8px 12px; color: #fcab10; font-size: .85rem; margin-bottom: 12px;
+      }
+      .question-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; justify-content: center; }
+      .question-text {
+        font-size: 1.1rem; color: #fff; line-height: 1.5; margin: 16px 0; font-weight: 500;
+      }
+      .question-text-small { font-size: .95rem; color: #fff; line-height: 1.4; margin-bottom: 16px; }
+      .answer-options { display: flex; flex-direction: column; gap: 8px; margin: 16px 0; }
+      .answer-option {
+        background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.12); border-radius: 10px;
+        color: #fff; cursor: pointer; font-family: "Sora", sans-serif; font-size: .9rem; font-weight: 500;
+        padding: 14px 18px; transition: all .2s; text-align: left;
+      }
+      .answer-option:hover { border-color: #abd40a; background: rgba(171,212,10,.1); }
+
+      /* Toast */
+      .game-toast {
+        position: fixed; top: 80px; left: 50%; transform: translateX(-50%) translateY(-20px);
+        z-index: 200; background: #1e3344; border: 1px solid rgba(171,212,10,.3); border-radius: 12px;
+        padding: 14px 24px; color: #fff; font-size: .9rem; font-weight: 500;
+        opacity: 0; transition: all .4s; max-width: 90vw; text-align: center;
+      }
+      .game-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
       /* Loading */
       .game-loading {
@@ -158,6 +236,10 @@
         <p class="event-desc" id="event-desc">You landed here.</p>
         <button class="event-btn" id="event-btn">Continue</button>
       </div>
+    </div>
+
+    <div class="question-modal" id="question-modal">
+      <div class="question-modal-card" id="question-modal-content"></div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
