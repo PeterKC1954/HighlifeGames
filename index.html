@@ -49,13 +49,15 @@
       <section class="hero" id="top" aria-labelledby="hero-title" style="background-image: url('assets/hero.png');">
         <div class="hero-content">
           <h1 id="hero-title" class="brand-lockup">
-            <img class="hero-logo" src="assets/hl_logo.png" alt="Highlife Games" />
+            <a href="https://app.animaker.com/video/FFTP7JR2QQ7SSHUB#:~:text=Copy,com/videoFFTP7JR2QQ7SSHUB" target="_blank" rel="noopener" aria-label="Watch the Highlife Games video">
+              <img class="hero-logo" src="assets/hl_logo.png" alt="Highlife Games" />
+            </a>
           </h1>
-          <p class="hero-copy">Think fast. Play smart. Win for real.</p>
+          <p class="hero-copy">Step into Highlife as Account Manager. Collect clients for answering questions. Earn HECUs. Buy Asset Items rise to Account Director and play for real prizes.</p>
           <p class="hero-tag">The quiz game with real prizes · Ages 14+</p>
           <div class="hero-cta-row">
             <button class="cta" id="hero-signup">Claim your spot 🚀</button>
-            <a class="cta cta-secondary" href="#how">See how it works</a>
+            <a class="cta cta-secondary" href="https://app.animaker.com/video/FFTP7JR2QQ7SSHUB#:~:text=Copy,com/videoFFTP7JR2QQ7SSHUB" target="_blank" rel="noopener">▶ Watch game video</a>
           </div>
           <div class="hero-stats">
             <div class="hero-stat"><span class="stat-icon" aria-hidden="true">🎁</span><b>10K</b><span>Per Referral</span></div>
@@ -99,7 +101,7 @@
           <div class="steps-grid">
             <div class="step-card">
               <span class="step-icon" aria-hidden="true">🎭</span>
-              <h3>Pick your player</h3>
+              <h3>Take role as Account Manager in Highlife</h3>
               <p>Choose your avatar, step into the agency as an Account Controller, and start earning HECUs by answering questions.</p>
             </div>
             <div class="step-card">
@@ -174,7 +176,7 @@
 
       <section class="avatars-section reveal" id="avatars" aria-labelledby="avatars-title">
         <div class="section-inner">
-          <p class="eyebrow">🎭 Pick your player</p>
+          <p class="eyebrow">🎭 Take role as Account Manager in Highlife</p>
           <h2 id="avatars-title">Choose your avatar</h2>
           <p class="section-copy">Every player gets an avatar — your identity on the board. Which one are you?</p>
           <div class="avatars-grid">
@@ -339,6 +341,14 @@
 
             <div class="player-fields" id="player-fields">
               <div class="form-row">
+                <input type="text" name="username" id="signup-username" placeholder="Player Username (yours for life)" maxlength="20" />
+              </div>
+              <p class="form-message" id="username-message" role="status" aria-live="polite" style="margin-top:-6px"></p>
+              <div class="form-row">
+                <input type="text" name="addressLine" placeholder="Address (never shown to players)" />
+                <input type="text" name="postalArea" placeholder="Town / area shown to players (e.g. Abergavenny)" />
+              </div>
+              <div class="form-row">
                 <select name="ageRange" required>
                   <option value="" disabled selected>Age range</option>
                   <option value="14-17">14–17</option>
@@ -348,6 +358,16 @@
                   <option value="45-54">45–54</option>
                   <option value="55+">55+</option>
                 </select>
+                <select name="gender" required>
+                  <option value="" disabled selected>Gender identity</option>
+                  <option value="male">Male</option>
+                  <option value="female">Female</option>
+                  <option value="non-binary">Non-binary</option>
+                  <option value="other">Other</option>
+                  <option value="prefer-not-to-say">Prefer not to say</option>
+                </select>
+              </div>
+              <div class="form-row">
                 <select name="avatar" required>
                   <option value="" disabled selected>Choose avatar</option>
                   <option value="dice">🎲 Dice</option>

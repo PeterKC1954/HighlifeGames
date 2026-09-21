@@ -17,6 +17,18 @@ const authApi = {
       p_telephone: data.telephone || null,
       p_crn: data.crn || null,
       p_referral_code: data.referralCode || null,
+      p_username: data.username || null,
+      p_gender: data.gender || null,
+      p_address_line: data.addressLine || null,
+      p_postal_area: data.postalArea || null,
+    });
+    if (error) throw error;
+    return result;
+  },
+
+  async checkUsername(username) {
+    const { data: result, error } = await window.supabaseClient.rpc("check_username", {
+      p_username: username,
     });
     if (error) throw error;
     return result;

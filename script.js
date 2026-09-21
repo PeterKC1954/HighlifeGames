@@ -113,6 +113,10 @@ if (signupForm && signupMessage) {
     const postcode = (data.get("postcode") || "").trim();
     const ageRange = data.get("ageRange") || "";
     const avatar = data.get("avatar") || "";
+    const gender = data.get("gender") || "";
+    const username = (data.get("username") || "").trim();
+    const addressLine = (data.get("addressLine") || "").trim();
+    const postalArea = (data.get("postalArea") || "").trim();
     const accountType = data.get("accountType") || "player";
     const terms = data.get("terms");
     const referralCode = (data.get("referralCode") || "").trim().toUpperCase();
@@ -134,9 +138,9 @@ if (signupForm && signupMessage) {
       return;
     }
 
-    if (accountType === "player" && (!ageRange || !avatar)) {
+    if (accountType === "player" && (!ageRange || !avatar || !username || !gender || !postalArea)) {
       signupMessage.classList.add("error");
-      signupMessage.textContent = "Please fill in all required fields.";
+      signupMessage.textContent = "Please fill in all required fields (Username, gender, age range, avatar, and your postal area).";
       return;
     }
 
@@ -178,9 +182,27 @@ if (signupForm && signupMessage) {
       const result = await window.authApi.signup({
         email, password, displayName, postcode, accountType, ageRange, avatar,
         companyName, website, contactName, telephone, crn, referralCode,
+        username, gender, addressLine, postalArea,
       });
 
-      if (result && result.error) throw new Error(result.error);
+      if (result && result.error) {
+        // Username taken — offer the suggested variations
+        if (result.suggestions && result.suggestions.length) {
+          const msg = document.getElementById("username-message");
+          if (msg) {
+            msg.className = "form-message error";
+            msg.innerHTML = `Username taken — try: ${result.suggestions
+              .map(s => `<button type="button" class="switch-link" data-username="${s}">${s}</button>`).join(" ")}`;
+            msg.querySelectorAll("[data-username]").forEach(btn => {
+              btn.addEventListener("click", () => {
+                document.getElementById("signup-username").value = btn.dataset.username;
+                msg.textContent = "";
+              });
+            });
+          }
+        }
+        throw new Error(result.error);
+      }
 
       // Upload proof of address to Supabase Storage if advertiser
       if (accountType === "advertiser" && proofFile && proofFile.name && result.user_id) {
@@ -222,12 +244,48 @@ if (signupForm && signupMessage) {
     } catch (err) {
       signupMessage.classList.add("error");
       signupMessage.classList.remove("success");
-      if (err.message.includes("already registered")) {
+      if (err.message.includes("Username already registered")) {
+        signupMessage.textContent = "That Username is taken — pick one of the suggestions below it.";
+      } else if (err.message.includes("already registered")) {
         signupMessage.textContent = "An account with this email already exists.";
       } else {
         signupMessage.textContent = err.message || "Something went wrong. Please try again.";
       }
     }
+  });
+}
+
+// Live username availability check — taken names get offered variations
+const signupUsernameInput = document.getElementById("signup-username");
+const usernameMsg = document.getElementById("username-message");
+if (signupUsernameInput && usernameMsg) {
+  let usernameTimer = null;
+  signupUsernameInput.addEventListener("input", () => {
+    clearTimeout(usernameTimer);
+    const name = signupUsernameInput.value.trim();
+    if (name.length < 3) { usernameMsg.textContent = ""; return; }
+    usernameTimer = setTimeout(async () => {
+      try {
+        const res = await window.authApi.checkUsername(name);
+        if (res.available) {
+          usernameMsg.className = "form-message success";
+          usernameMsg.textContent = `✓ ${res.username} is available — registered to you for life`;
+        } else if (res.suggestions) {
+          usernameMsg.className = "form-message error";
+          usernameMsg.innerHTML = `Taken — try: ${res.suggestions
+            .map(s => `<button type="button" class="switch-link" data-username="${s}">${s}</button>`).join(" ")}`;
+          usernameMsg.querySelectorAll("[data-username]").forEach(btn => {
+            btn.addEventListener("click", () => {
+              signupUsernameInput.value = btn.dataset.username;
+              usernameMsg.textContent = "";
+            });
+          });
+        } else if (res.error) {
+          usernameMsg.className = "form-message error";
+          usernameMsg.textContent = res.error;
+        }
+      } catch { /* backend not updated yet — validated again at signup */ }
+    }, 500);
   });
 }
 
